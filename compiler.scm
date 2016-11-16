@@ -104,26 +104,27 @@ done))
 (define <digit-0-9>
     (range #\0 #\9))
 
-;(define <Natural>
-;(let (zero (char->integer #\0))
+(define <Natural>
+    (new
+        (*parser <digit-0-9>)
+        (*parser <digit-0-9>) *star
+        (*caten 2)
+        
+        (*pack-with
+        (lambda (first rest)
+            (string->number (list->string `(,first ,@rest)))))
 
-;  (new  (*parser <digit-0-9>) *plus
-        ;(*pack (lambda (dig)
-        ;                (- (char->integer dig) zero))) 
-                            ;(list->string   
-			     ; (list num)
-			     ;num)))
-       ;done)))
+       done))
 
-(define <Carmel>
-  (let ((zero (char->integer #\0)))
-  
-    (new (*parser (range #\0 #\9)) *plus
-	 (*pack
-	  (lambda (ch)
-	    (string->number (list->string (- (char->integer ch) zero))))))
-
-	 done)))
+;; (define <Carmel>
+;;   (let ((zero (char->integer #\0)))
+;;   
+;;     (new (*parser (range #\0 #\9)) *plus
+;; 	 (*pack
+;; 	  (lambda (ch)
+;; 	    (string->number (list->string (- (char->integer ch) zero))))))
+;; 
+;; 	 done)))
        
        
        
