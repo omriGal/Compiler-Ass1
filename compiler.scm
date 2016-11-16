@@ -65,10 +65,58 @@
 
 done))
 
+  
+(define <HexChar>
+  (new  (*parser (range #\0  #\9))
+        (*parser (range #\a  #\f))
+        (*parser (range #\A  #\F))
+        (*disj 3)
+        (*pack
+        (lambda (ch) ch))
+  done))
+  
+(define <HexUnicodeChar>
+  (new  (*parser (char #\x))
+        (*parser <HexChar>) *plus
+        (*caten 2)
+        
+        (*pack-with
+        (lambda (EX rest)
+            (list->string  (cons #\x rest))))
+    done))
+    
+(define <Char>
+(new    (*parser <CharPrefix>)
+        (*parser (char #\())
+        
+        (*parser <VisibleSimpleChar>)
+        (*parser <NamedChar>)
+        (*parser <HexUnicodeChar>)
+        (*disj 3)
+        
+        (*parser (char #\)))
+        
+        (*caten 4)
+        ; pack ???
+        
+        done))
+        
+(define <digit-0-9>
+    (range #\0 #\9))
 
+(define <nat>
+  (new  (*parser <digit-0-9>) *star
+        (*pack-with (lambda (a s)
+                        (string->number 
+                            (list->string
+                                
+                        
+        
+        
+    
 (define <Sexpr>
-  (new (*parser <boolean>)
-       (*parser <NamedChar>)
+  (new (*parser <Boolean>)
+       (*parser <Char>)
        (*disj 2)
        done))
 
