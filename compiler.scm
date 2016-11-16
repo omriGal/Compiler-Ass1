@@ -104,19 +104,33 @@ done))
 (define <digit-0-9>
     (range #\0 #\9))
 
-(define <nat>
-  (new  (*parser <digit-0-9>) *star
-        (*pack-with (lambda (a s)
-                        (string->number 
-                            (list->string
-                                
-                        
-        
-        
-    
+;(define <Natural>
+;(let (zero (char->integer #\0))
+
+;  (new  (*parser <digit-0-9>) *plus
+        ;(*pack (lambda (dig)
+        ;                (- (char->integer dig) zero))) 
+                            ;(list->string   
+			     ; (list num)
+			     ;num)))
+       ;done)))
+
+(define <Carmel>
+  (let ((zero (char->integer #\0)))
+  
+    (new (*parser (range #\0 #\9)) *plus
+	 (*pack
+	  (lambda (ch)
+	    (string->number (list->string (- (char->integer ch) zero))))))
+
+	 done)))
+       
+       
+       
 (define <Sexpr>
   (new (*parser <Boolean>)
        (*parser <Char>)
+       
        (*disj 2)
        done))
 
