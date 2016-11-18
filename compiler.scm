@@ -67,7 +67,8 @@ done))
 
   
 (define <HexChar>
-  (new  (*parser (range #\0  #\9))
+  (new  
+        (*parser (range #\0  #\9))
         (*parser (range #\a  #\f))
         (*parser (range #\A  #\F))
         (*disj 3)
@@ -76,7 +77,8 @@ done))
   done))
   
 (define <HexUnicodeChar>
-  (new  (*parser (char #\x))
+  (new  
+        (*parser (char #\x))
         (*parser <HexChar>) *plus
         (*caten 2)
         
@@ -86,17 +88,15 @@ done))
     done))
     
 (define <Char>
-(new    (*parser <CharPrefix>)
-        (*parser (char #\())
+    (new    
+        (*parser <CharPrefix>)
         
         (*parser <VisibleSimpleChar>)
         (*parser <NamedChar>)
         (*parser <HexUnicodeChar>)
         (*disj 3)
-        
-        (*parser (char #\)))
-        
-        (*caten 4)
+                
+        (*caten 2)
         ; pack ???
         
         done))
@@ -115,24 +115,66 @@ done))
             (string->number (list->string `(,first ,@rest)))))
 
        done))
-
-;; (define <Carmel>
-;;   (let ((zero (char->integer #\0)))
-;;   
-;;     (new (*parser (range #\0 #\9)) *plus
-;; 	 (*pack
-;; 	  (lambda (ch)
-;; 	    (string->number (list->string (- (char->integer ch) zero))))))
-;; 
-;; 	 done)))
        
+(define <Integer>
+    (new
+        (*parser (char #\+))
+        (*parser <Natural>)
+        (*caten 2)
+        (*pack-with
+            (lambda (plus num) num))
+            
+        (*parser (char #\-))
+        (*parser <Natural>)
+        (*caten 2)
+        (*pack-with
+            (lambda (minus num) 
+                (- num)))
+            
+        (*parser <Natural>)
+        
+        (*disj 3)
+        
+    done))
+    
+(define <Fraction>
+    (new
+        (*parser <Integer>)
+        (*parser (char #\/))
+        (*parser <Natural>)
+        (*guard (lambda(nat) (not (zero? nat))))
+        (*caten 3)
+        
+        (*pack-with
+            (lambda (int div nat) 
+                (/ int nat)))
+    done))
+    
+    
+(define <Number>
+    (new
+        (*parser <Integer>)
+        (*parser <Fraction>)
+        (*disj 2)
+    done))
+            
+(define <StringLiteralChar>
+    (new
+        (*parser <any-char>)
+        (*parser (char #\\))
+        *diff
+    done))
+    
+(define <StringMetaChar>
+    
        
        
 (define <Sexpr>
   (new (*parser <Boolean>)
        (*parser <Char>)
+       (*parser <Number>)
        
-       (*disj 2)
+       (*disj 3)
        done))
 
 
