@@ -157,24 +157,78 @@ done))
         (*parser <Fraction>)
         (*disj 2)
     done))
-            
+     
+
 (define <StringLiteralChar>
     (new
         (*parser <any-char>)
-        (*parser (char #\\))
+        (*parser (char #\"))
         *diff
     done))
     
+
+(define ^<MetaChar>
+  (lambda (str ch)
+    (new (*parser (word str))
+         (*pack (lambda (_) ch))
+   done)))   
+
+
 (define <StringMetaChar>
-    
-       
-       
+  (new (*parser (^<MetaChar> "\\\\" #\\))
+       (*parser (^<MetaChar> "\\\"" #\"))
+       (*parser (^<MetaChar> "\\n" #\newline))
+       (*parser (^<MetaChar> "\\r" #\return))
+       (*parser (^<MetaChar> "\\t" #\tab))
+       (*parser (^<MetaChar> "\\f" #\page)) 
+
+       (*disj 6)
+       done)) 
+
+
+(define <StringHexChar>
+  (new (*parser (char #\\))
+       (*parser (char #\x))
+       (*parser <HexChar>) *star
+       (*parser (char #\;))
+       (*caten 4)
+
+       (*pack-with
+        (lambda (a b c d)
+        (integer->char
+         (string->number
+          (list->string `,c ) 16) )))
+
+    done))
+
+(define <StringChar>
+  (new (*parser <StringLiteralChar>)
+       (*parser <StringHexChar>)
+       (*parser <StringMetaChar>)
+       (*disj 3)
+
+    done))
+
+(define <String>
+  (new (*parser (char #\"))
+       (*parser <StringChar>) *star
+       (*parser (char #\"))
+       (*caten 3)
+
+      (*pack-with
+        (lambda (open-delim chars close-delim)
+          (list->string chars)))
+
+    done))
+
+ 
 (define <Sexpr>
   (new (*parser <Boolean>)
        (*parser <Char>)
        (*parser <Number>)
-       
-       (*disj 3)
+       (*parser <String>)
+       (*disj 4)
+
        done))
 
 
