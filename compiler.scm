@@ -3,6 +3,57 @@
 
 (load "~/Downloads/pc.scm") ;; TODO: Change path
 
+;; From Mayar second tutorial:
+
+(define <whitespace>
+  (const
+   (lambda (ch)
+     (char<=? ch #\space))))
+
+(define <line-comment>
+  (let ((<end-of-line-comment>
+   (new (*parser (char #\newline))
+        (*parser <end-of-input>)
+        (*disj 2)
+        done)))
+    (new (*parser (char #\;))
+   
+   (*parser <any-char>)
+   (*parser <end-of-line-comment>)
+   *diff *star
+
+   (*parser <end-of-line-comment>)
+   (*caten 3)
+   done)))
+
+(define <sexpr-comment>
+  (new (*parser (word "#;"))
+       (*delayed (lambda () <sexpr>))
+       (*caten 2)
+       done))
+
+(define <comment>
+  (disj <line-comment>
+  <sexpr-comment>))
+
+(define <skip>
+  (disj <comment>
+  <whitespace>))
+
+(define ^^<wrapped>
+  (lambda (<wrapper>)
+    (lambda (<p>)
+      (new (*parser <wrapper>)
+     (*parser <p>)
+     (*parser <wrapper>)
+     (*caten 3)
+     (*pack-with
+      (lambda (_left e _right) e))
+     done))))
+
+(define ^<skipped*> (^^<wrapped> (star <skip>)))
+
+;; Now our part:
 (define <Boolean>
   (new (*parser (word-ci "#t"))
        (*pack
@@ -163,7 +214,10 @@ done))
     (new
         (*parser <any-char>)
         (*parser (char #\"))
+        (*parser (char #\\))
+        (*disj 2)
         *diff
+
     done))
     
 
@@ -221,13 +275,77 @@ done))
 
     done))
 
- 
+(define <SymbolChar>
+  (new  (*parser (range #\0  #\9))
+        (*parser (range #\a  #\z))
+        (*parser (range #\A  #\Z))
+        (*parser (char #\!))
+        (*parser (char #\$))
+        (*parser (char #\^))
+        (*parser (char #\*))
+        (*parser (char #\-))
+        (*parser (char #\_))
+        (*parser (char #\=))
+        (*parser (char #\+))
+        (*parser (char #\<))
+        (*parser (char #\>))
+        (*parser (char #\?))
+        (*parser (char #\/))
+        (*disj 15)
+
+        (*pack 
+          (lambda (sym) sym))
+    done))
+
+(define <Symbol>
+  (new  (*parser <SymbolChar>) 
+        (*parser <SymbolChar>) *star
+        (*caten 2)
+
+        (*pack-with
+          (lambda (first rest)
+            (string->symbol 
+              (list->string `(,first ,@rest)))))
+    done))
+
+
 (define <Sexpr>
-  (new (*parser <Boolean>)
+  (new 
+       (*parser <Boolean>)
        (*parser <Char>)
        (*parser <Number>)
        (*parser <String>)
-       (*disj 4)
+       (*parser <Symbol>)
+       
+;; <ProperList>
+       (*parser (char #\( ))
+       (*delayed (lambda () <Sexpr>)) *star
+       (*parser (char #\) ))
+       (*caten 3)
+       (*pack-with 
+          (lambda (open exp close) `(,@exp)))
+
+;; <ImproperList>
+       (*parser (char #\( ))
+       (*delayed (lambda () <Sexpr>)) *plus
+       (*parser (char #\.))
+       (*delayed (lambda () <Sexpr>))
+       (*parser (char #\) ))
+       (*caten 5)
+       (*pack-with 
+          (lambda (open exp dot rest close) (list*  `,@exp `,rest)))
+
+;; <Vector>
+       (*parser (char #\# ))
+       (*parser (char #\( ))
+       (*delayed (lambda () <Sexpr>)) *star
+       (*parser (char #\) ))
+       (*caten 4)
+       (*pack-with 
+          (lambda (open atx exp close) `#(,@exp)))
+
+
+       (*disj 8)
 
        done))
 
