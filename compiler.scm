@@ -319,57 +319,136 @@ done))
 
   done))
 
+(define <InfixAtom> 
+    (new (*parser <Number>)
+    done)) 
+ 
+;-> mul/div ( +/- mul/div)* 
+
+(define <AddSymbol>
+    (new (*parser (char #\+))         
+        
+         (*pack
+            (lambda (_) '+))
+    done))
+    
+(define <SubSymbol>
+    (new (*parser (char #\-))         
+        (*pack
+           (lambda (_) '-))
+    done))
+    
+(define <MulSymbol>
+    (new (*parser (char #\*))         
+        (*pack
+           (lambda (_) '*))
+    done))
+    
+(define <DivSymbol>
+    (new (*parser (char #\/))         
+        (*pack
+           (lambda (_) '/))
+    done))
+    
 (define <PowerSymbol>
   (new  
-        ;(*parser (char #\^))
-        (*parser (word "^"))
+        (*parser (char #\^))
         (*parser (word "**"))
         (*disj 2)
 
-        (*pack-with 
-          (lambda (_) 'expt ))
+        (*pack 
+          (lambda (_) 'expt))
   done))
-
-(define <InfixAtom> 
-    (new (*parser <Number>)
-
-         (*parser (char #\( ) )
-         (*delayed (lambda () <InfixExpression>))
-         (*parser (char #\) )) 
-         (*caten 3)
-
-         (*disj 2)
-    done)) 
-
-(define <InnerPow>
-  (new
-        (*parser <PowerSymbol>)
-        (*parser <InfixAtom>) 
-        (*caten 2)
-
-        (*pack-with
-          (lambda (a b) `(,@b)))
-    done))
-
+  
+;(define <InfixNeg>
+;    (new (*parser <SubSymbol>)
+;         (*parser <InfixAtom>)
+;         (*caten 2)
+         
+;        (*pack-with (lambda (a b)
+;                        `(- ,b)))                  
+;         done))
+  
 (define <InfixPow>
   (new  (*parser <InfixAtom>)
 
-       #|  (*parser <PowerSymbol>)
-        (*parser <InnerPow>) 
-        (*caten 2) *star |#
-        (*parser <InnerPow>) *star
+        (*parser <PowerSymbol>)
+        (*parser <InfixAtom>)
+        (*caten 2)
+         *star
+         
         (*caten 2)
 
-        (*pack-with
-          (lambda (base hezka) 
-            `(expt ,base ,@hezka)))  
+         (*pack-with (lambda (a b)
+                        (if (null? b)
+                            a
+                            (fold-left 
+                                ( lambda (d x) 
+                                `(,(car x) ,d ,@(cdr x))) 
+                                `(,(caar b) ,a ,@(cdar b))  
+                                    (cdr b))
+                                            )))  
   done))
+    
+    
+(define <InfixMulDiv>
+    (new
+        (*parser <InfixPow>)
+        
+        (*parser <MulSymbol>)
+        (*parser <InfixPow>)
+        (*disj 2)
+
+         
+         (*parser <InfixAtom>)
+         (*caten 2)
+         *star
+         
+         (*caten 2)
+         
+         (*pack-with (lambda (a b)
+                        (if (null? b)
+                            a
+                            (fold-left 
+                                ( lambda (d x) 
+                                `(,(car x) ,d ,@(cdr x))) 
+                                `(,(caar b) ,a ,@(cdar b))  
+                                    (cdr b))
+                                            )))
+            done))
+
+(define <InfixAddSub>
+    (new
+        (*parser <InfixMulDiv>)
+        
+        (*parser <AddSymbol>)
+        (*parser <SubSymbol>)
+        (*disj 2)
+
+         
+         (*parser <InfixMulDiv>)
+         (*caten 2)
+         *star
+         
+         (*caten 2)
+         
+         (*pack-with (lambda (a b)
+                        (if (null? b)
+                            a
+                            (fold-left 
+                                ( lambda (d x) 
+                                `(,(car x) ,d ,@(cdr x))) 
+                                `(,(caar b) ,a ,@(cdar b))  
+                                    (cdr b))
+                                            )))
+            done))
+            
+
+
 
 (define <InfixExpression>
   (new
         (*parser <InfixPow>)
-
-        ;(*disj 2)
 
     done))
 
@@ -382,6 +461,9 @@ done))
         (*pack-with
           (lambda (a b) b ))
   done))
+  
+  
+
     
 
 ;--------  S-EXPRESSION ---------------
