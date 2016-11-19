@@ -310,7 +310,8 @@ done))
 
 
 (define <Sexpr>
-  (new 
+ (^<skipped*>
+ (new 
        (*parser <Boolean>)
        (*parser <Char>)
        (*parser <Number>)
@@ -333,7 +334,7 @@ done))
        (*parser (char #\) ))
        (*caten 5)
        (*pack-with 
-          (lambda (open exp dot rest close) (list*  `,@exp `,rest)))
+          (lambda (open exp dot rest close) `(,@exp . ,rest)))
 
 ;; <Vector>
        (*parser (char #\# ))
@@ -343,10 +344,43 @@ done))
        (*caten 4)
        (*pack-with 
           (lambda (open atx exp close) `#(,@exp)))
+          
+;; <Quated>
+       (*parser (char #\' ))
+       (*delayed (lambda () <Sexpr>))
+       (*caten 2)
+       (*pack-with
+        (lambda(qu exp)
+             (list 'quote exp)))
+            
+            
+;; <QuasiQuated>
+       (*parser (char #\` ))
+       (*delayed (lambda () <Sexpr>))
+       (*caten 2)
+       (*pack-with
+        (lambda(qu exp)
+            (list 'quasiquote exp)))
+            
+;; <Unquated>
+       (*parser (char #\, ))
+       (*delayed (lambda () <Sexpr>))
+       (*caten 2)
+       (*pack-with
+        (lambda(qu exp)
+            (list 'unquote exp)))
+            
+;; <UnquateAndSpliced>
+       (*parser (char #\, ))
+       (*parser (char #\@ ))
+       (*delayed (lambda () <Sexpr>))
+       (*caten 3)
+       (*pack-with
+        (lambda(qu sh exp)
+            (list 'unquote-splicing  exp)))
 
+       (*disj 12)
 
-       (*disj 8)
-
-       done))
+       done)))
 
 
