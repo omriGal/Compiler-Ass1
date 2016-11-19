@@ -309,6 +309,83 @@ done))
     done))
 
 
+
+;--------  INFIX EXPRESSION INFRA ---------------
+
+(define <InfixPrefixExtensionPrefix>
+  (new  (*parser (word "##"))
+        (*parser (word "#%"))
+        (*disj 2)
+
+  done))
+
+(define <PowerSymbol>
+  (new  
+        ;(*parser (char #\^))
+        (*parser (word "^"))
+        (*parser (word "**"))
+        (*disj 2)
+
+        (*pack-with 
+          (lambda (_) 'expt ))
+  done))
+
+(define <InfixAtom> 
+    (new (*parser <Number>)
+
+         (*parser (char #\( ) )
+         (*delayed (lambda () <InfixExpression>))
+         (*parser (char #\) )) 
+         (*caten 3)
+
+         (*disj 2)
+    done)) 
+
+(define <InnerPow>
+  (new
+        (*parser <PowerSymbol>)
+        (*parser <InfixAtom>) 
+        (*caten 2)
+
+        (*pack-with
+          (lambda (a b) `(,@b)))
+    done))
+
+(define <InfixPow>
+  (new  (*parser <InfixAtom>)
+
+       #|  (*parser <PowerSymbol>)
+        (*parser <InnerPow>) 
+        (*caten 2) *star |#
+        (*parser <InnerPow>) *star
+        (*caten 2)
+
+        (*pack-with
+          (lambda (base hezka) 
+            `(expt ,base ,@hezka)))  
+  done))
+
+(define <InfixExpression>
+  (new
+        (*parser <InfixPow>)
+
+        ;(*disj 2)
+
+    done))
+
+(define <InfixExtension>
+  (new
+        (*parser <InfixPrefixExtensionPrefix>)
+        (*parser <InfixExpression>)
+        (*caten 2)
+
+        (*pack-with
+          (lambda (a b) b ))
+  done))
+    
+
+;--------  S-EXPRESSION ---------------
+
 (define <Sexpr>
  (^<skipped*>
  (new 
@@ -379,9 +456,8 @@ done))
         (lambda(qu sh exp)
             (list 'unquote-splicing  exp)))
 
-       (*disj 12)
+      (*parser <InfixExtension>)
+
+      (*disj 13)
 
        done)))
-
-       ;test
-
