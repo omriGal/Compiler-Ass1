@@ -1,6 +1,10 @@
 ;;; compiler.scm
 ;;; Programmers: Omri Gal & Carmel Levy, 2016
 
+(case-sensitive #f)
+
+;;;
+
 (load "~/Downloads/pc.scm") ;; TODO: Change path
 
 ;; From tutorial:
@@ -26,8 +30,10 @@
    (*caten 3)
    done)))
 
+(define <expression-comment-prefix> (word "#;"))
+
 (define <sexpr-comment>
-  (new (*parser (word "#;"))
+  (new (*parser <expression-comment-prefix>)
        (*delayed (lambda () <Sexpr>))
        (*caten 2)
        done))
@@ -409,6 +415,23 @@ done))
 
 ;--------  INFIX EXPRESSION INFRA ---------------
 
+(define <infix-expression-comment>
+  (new (*parser <expression-comment-prefix>)
+       (*delayed (lambda () <InfixExpression>))
+       (*caten 2)
+       done))
+
+(define <infix-comment>
+  (disj <infix-expression-comment>
+	<line-comment>))
+
+(define <infix-skipped>
+  (disj <whitespace>
+	<infix-comment>))
+
+(define ^<infix-skipped*>
+  (^^<wrapped> (star <infix-skipped>)))
+
 (define <InfixPrefixExtensionPrefix>
   (new  
         (*parser (word "##"))
@@ -430,16 +453,9 @@ done))
   (new  
         (*parser (range #\0  #\9))
         (*parser (range #\a  #\z))
-                
-        (*parser (char #\!))
-        (*parser (char #\$))
-        (*parser (char #\^))
-        (*parser (char #\_))
-        (*parser (char #\=))
-        (*parser (char #\<))
-        (*parser (char #\>))
-        (*parser (char #\?))
-        (*disj 10)
+
+	(*parser (one-of "!$^_=<>?"))
+        (*disj 3)
         
         (*pack 
           (lambda (sym) sym))
@@ -463,45 +479,25 @@ done))
               (list->string `(,first ,@rest)))))
     done))
     
- 
-(define <AddSymbol>
-    (new 
-        (*parser (char #\+))         
-        
-        (*pack
-           (lambda (_) '+))
-    done))
+(define ^<op>
+  (lambda (op-string op-symbol)
+    (new (*parser (^<infix-skipped*> (word op-string)))
+	 (*pack (lambda (_) op-symbol))
+	 done)))
+
+(define <AddSymbol> (^<op> "+" '+))
     
-(define <SubSymbol>
-    (new 
-        (*parser (char #\-))         
-        (*pack
-           (lambda (_) '-))
-    done))
+(define <SubSymbol> (^<op> "-" '-))
     
 (define <MulSymbol>
-    (new 
-        (*parser (char #\*))         
-        (*pack
-           (lambda (_) '*))
-    done))
+  (not-followed-by (^<op> "*" '*)
+		   (char #\*)))
     
-(define <DivSymbol>
-    (new    
-        (*parser (char #\/))         
-        (*pack
-           (lambda (_) '/))
-    done))
+(define <DivSymbol> (^<op> "/" '/))
     
 (define <PowerSymbol>
-  (new  
-        (*parser (char #\^))
-        (*parser (word "**"))
-        (*disj 2)
-
-        (*pack 
-          (lambda (_) 'expt))
-  done))    
+  (disj (^<op> "^" 'expt)
+	(^<op> "**" 'expt)))
     
 (define <InfixNeg>
     (new 
@@ -549,8 +545,9 @@ done))
         (*pack-with 
           (lambda (a b) 
                     `(,a ,@b)))
-        
-        (*parser <epsilon>)
+
+	(*parser (star <infix-skipped>))
+	(*pack (lambda (_) '()))
         (*disj 2)
     done))
     
@@ -560,7 +557,7 @@ done))
         (*parser <InfixAtom>)
     
         (*parser (char #\())
-        (*parser <InfixArgList>)
+        (*parser <InfixArgList>) 
         (*parser (char #\)))
     
         (*caten 4)
@@ -662,14 +659,9 @@ done))
                                             
             done))
             
-
-
-
 (define <InfixExpression>
-  (new
-        (*parser <InfixAddSub>)
-
-    done))
+  (^<infix-skipped*>
+   <InfixAddSub>))
 
 (define <InfixExtension>
   (new
