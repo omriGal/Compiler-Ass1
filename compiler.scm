@@ -3,7 +3,7 @@
 
 (load "~/Downloads/pc.scm") ;; TODO: Change path
 
-;; From Mayar second tutorial:
+;; From tutorial:
 
 (define <whitespace>
   (const
@@ -28,7 +28,7 @@
 
 (define <sexpr-comment>
   (new (*parser (word "#;"))
-       (*delayed (lambda () <sexpr>))
+       (*delayed (lambda () <Sexpr>))
        (*caten 2)
        done))
 
@@ -217,8 +217,8 @@ done))
     
 (define <Number>
     (new
-        (*parser <Integer>)
         (*parser <Fraction>)
+        (*parser <Integer>)
         (*disj 2)
     done))
      
@@ -293,7 +293,6 @@ done))
   (new  
         (*parser (range #\0  #\9))
         (*parser (range #\a  #\z))
-        (*parser (range #\A  #\Z))
         (*parser (char #\!))
         (*parser (char #\$))
         (*parser (char #\^))
@@ -306,10 +305,16 @@ done))
         (*parser (char #\>))
         (*parser (char #\?))
         (*parser (char #\/))
-        (*disj 15)
+        (*disj 14)
 
         (*pack 
           (lambda (sym) sym))
+          
+        (*parser (range #\A  #\Z))
+        (*pack
+            (lambda (ch)
+              (integer->char (+ (char->integer ch) 32)))) 
+        (*disj 2)
     done))
 
 (define <Symbol>
@@ -420,13 +425,44 @@ done))
                 (*pack-with (lambda (a b c)
                         b)) 
     done))
-
-(define <InfixAtom> 
-    (new 
-        (*parser <Number>)
-        (*parser <InfixParen>)
+    
+(define <InfixSymbolChar>
+  (new  
+        (*parser (range #\0  #\9))
+        (*parser (range #\a  #\z))
+                
+        (*parser (char #\!))
+        (*parser (char #\$))
+        (*parser (char #\^))
+        (*parser (char #\_))
+        (*parser (char #\=))
+        (*parser (char #\<))
+        (*parser (char #\>))
+        (*parser (char #\?))
+        (*disj 10)
+        
+        (*pack 
+          (lambda (sym) sym))
+          
+        (*parser (range #\A  #\Z))
+        (*pack
+            (lambda (ch)
+              (integer->char (+ (char->integer ch) 32)))) 
         (*disj 2)
-    done)) 
+    done))
+
+(define <InfixSymbol>
+  (new  
+        (*parser <InfixSymbolChar>) 
+        (*parser <InfixSymbolChar>) *star
+        (*caten 2)
+
+        (*pack-with
+          (lambda (first rest)
+            (string->symbol 
+              (list->string `(,first ,@rest)))))
+    done))
+    
  
 (define <AddSymbol>
     (new 
@@ -465,8 +501,8 @@ done))
 
         (*pack 
           (lambda (_) 'expt))
-  done))
-  
+  done))    
+    
 (define <InfixNeg>
     (new 
         (*parser <SubSymbol>)
@@ -476,24 +512,68 @@ done))
         (*pack-with (lambda (a b)
                         `(- ,b)))                  
     done))
-        
+    
+    
+(define <InfixAtom> 
+    (new 
+        (*parser <Number>)
+        (*parser <InfixParen>)
+        (*parser <InfixSymbol>)
+        (*parser <InfixNeg>)
+        (*disj 4)
+    done)) 
 
+  
    
 ;(define <InfixArrayGet>
 ;   (new
  ;   
  ;   done))
     
-;(define <InfixFuncall>
- ;   (new
 
-  ;  done))
     
-;(define <InfixArgList>
-;    (new
-
-;    done))
-
+(define <InfixArgList>
+    (new
+        (*delayed (lambda () <InfixExpression>))
+    
+        (*parser (char #\,))
+        (*delayed (lambda () <InfixExpression>))
+        (*caten 2)
+        
+        (*pack-with 
+          (lambda (a b) b))
+        
+        *star
+        (*caten 2)
+        
+        (*pack-with 
+          (lambda (a b) 
+                    `(,a ,@b)))
+        
+        (*parser <epsilon>)
+        (*disj 2)
+    done))
+    
+(define <InfixFuncall>
+    (new
+    
+        (*parser <InfixAtom>)
+    
+        (*parser (char #\())
+        (*parser <InfixArgList>)
+        (*parser (char #\)))
+    
+        (*caten 4)
+    
+        (*pack-with 
+          (lambda (fun open args close) 
+                    (cons fun args)))
+                    
+        (*parser <InfixAtom>)
+        (*disj 2)
+    
+    done))
+    
 ;(define <InfixSexprEscape>
 ;    (new
 ;
@@ -502,9 +582,7 @@ done))
 
 (define <InfixPow>
   (new  
-        (*parser <InfixAtom>)
-        (*parser <InfixNeg>)
-        (*disj 2)
+        (*parser <InfixFuncall>)
 
         (*parser <PowerSymbol>)
         (*delayed (lambda () <InfixPow>))
@@ -523,6 +601,13 @@ done))
                                     (cdr b))
                                             )))  
   done))
+  
+(define <TopInfix>
+    (new 
+        (*parser <InfixPow>)
+        (*parser <InfixFuncall>)
+        (*disj 2)
+    done))
     
     
 (define <InfixMulDiv>
@@ -593,7 +678,7 @@ done))
         (*caten 2)
 
         (*pack-with
-          (lambda (a b) b ))
+          (lambda (extn expr) expr))
   done))
   
   
@@ -619,7 +704,8 @@ done))
 
       (*disj 13)
 
-       done)))
-       
+    done)))
+            
 ;; (load "~/Comp/compiler.scm")
+;; (test-string <Sexpr> " ")
 ;; (load "~/Downloads/parser.so")
