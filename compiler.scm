@@ -53,7 +53,8 @@
 
 (define ^<skipped*> (^^<wrapped> (star <skip>)))
 
-;; Now our part:
+;;;;;;;;;;;;;;;;;;; Extended Syntax ;;;;;;;;;;;;;;;;;
+
 (define <Boolean>
   (new 
         (*parser (word-ci "#t"))
@@ -70,9 +71,7 @@
        
 (define <CharPrefix>
   (new  
-        (*parser (char #\#))
-        (*parser (char #\\))
-        (*caten 2)
+        (*parser (word "#\\"))
   done))
   
   
@@ -90,37 +89,36 @@
 (new 
         (*parser (word-ci "lambda"))
         (*pack
-            (lambda (_) 'lambda))
+            (lambda (_) (integer->char 955)))
         
         (*parser (word-ci "newline"))
         (*pack
-            (lambda (_) 'newline))
+            (lambda (_) #\newline))
         
         (*parser (word-ci "nul"))
         (*pack
-            (lambda (_) 'nul))
+            (lambda (_) #\nul))
 
         (*parser (word-ci "page"))
         (*pack
-            (lambda (_) 'page))
+            (lambda (_) #\page))
         
         (*parser (word-ci "return"))
         (*pack
-            (lambda (_) 'return))
+            (lambda (_) #\return))
         
         (*parser (word-ci "space"))
         (*pack
-            (lambda (_) 'space))
+            (lambda (_) #\space))
         
         (*parser (word-ci "tab"))
         (*pack
-            (lambda (_) 'tab))
+            (lambda (_) #\tab))
     
         (*disj 7)
 
 done))
 
-  
 (define <HexChar>
   (new  
         (*parser (range #\0  #\9))
@@ -135,25 +133,36 @@ done))
   (new  
         (*parser (char #\x))
         (*parser <HexChar>) *plus
+        (*guard
+            (lambda (hex)
+                (<  
+                    (string->number
+                            (list->string `,hex ) 16)
+                    1114112)))
+        
         (*caten 2)
         
         (*pack-with
-        (lambda (EX rest)
-            (list->string  (cons #\x rest))))
+            (lambda (pre hex)
+                (integer->char
+                    (string->number
+                        (list->string `,hex ) 16) )))
     done))
     
 (define <Char>
     (new    
         (*parser <CharPrefix>)
         
-        (*parser <VisibleSimpleChar>)
         (*parser <NamedChar>)
         (*parser <HexUnicodeChar>)
+        (*parser <VisibleSimpleChar>)
         (*disj 3)
                 
         (*caten 2)
-        ; pack ???
         
+        (*pack-with
+        (lambda (pre ch)
+                        ch))
         done))
         
 (define <digit-0-9>
@@ -255,9 +264,9 @@ done))
 
         (*pack-with
             (lambda (a b c d)
-            (integer->char
-            (string->number
-            (list->string `,c ) 16) )))
+                (integer->char
+                    (string->number
+                        (list->string `,c ) 16) )))
     done))
 
 (define <StringChar>
@@ -401,6 +410,16 @@ done))
         (*parser (word "#%"))
         (*disj 2)
   done))
+  
+(define <InfixParen>
+    (new
+        (*parser (char #\())
+        (*delayed (lambda () <InfixExpression>))
+        (*parser (char #\)))
+        (*caten 3)
+                (*pack-with (lambda (a b c)
+                        b)) 
+    done))
 
 (define <InfixAtom> 
     (new 
@@ -458,15 +477,7 @@ done))
                         `(- ,b)))                  
     done))
         
-(define <InfixParen>
-    (new
-        (*parser (char #\())
-        (*delayed (lambda () <InfixExpression>))
-        (*parser (char #\)))
-        (*caten 3)
-                (*pack-with (lambda (a b c)
-                        b)) 
-    done))
+
    
 ;(define <InfixArrayGet>
 ;   (new
@@ -611,3 +622,4 @@ done))
        done)))
        
 ;; (load "~/Comp/compiler.scm")
+;; (load "~/Downloads/parser.so")
