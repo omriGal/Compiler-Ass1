@@ -519,14 +519,39 @@ done))
         (*disj 4)
     done)) 
 
-  
-   
-;(define <InfixArrayGet>
-;   (new
- ;   
- ;   done))
-    
 
+(define <SquareParen>
+    (new
+        (*parser (char #\[))
+        (*parser <InfixAtom>)
+        (*parser (char #\]))
+        (*caten 3)
+        
+        (*pack-with 
+            (lambda (open expr close)
+                            expr))
+    done))
+
+(define <InfixArrayGet>
+    (new
+        (*parser <InfixAtom>)
+        
+        (*parser <SquareParen>)
+        *plus
+        
+        (*caten 2)
+         
+         (*pack-with (lambda (a b)
+                        (if (null? b)
+                            a
+                            (fold-left 
+                                ( lambda (d x) 
+                                `(vector-ref ,d ,x)) 
+                                `(vector-ref ,a ,(car b))  
+                                    (cdr b))
+                                             ))) 
+    done))
+    
     
 (define <InfixArgList>
     (new
@@ -546,8 +571,8 @@ done))
           (lambda (a b) 
                     `(,a ,@b)))
 
-	(*parser (star <infix-skipped>))
-	(*pack (lambda (_) '()))
+        (*parser (star <infix-skipped>))
+        (*pack (lambda (_) '()))
         (*disj 2)
     done))
     
@@ -598,13 +623,6 @@ done))
                                     (cdr b))
                                             )))  
   done))
-  
-(define <TopInfix>
-    (new 
-        (*parser <InfixPow>)
-        (*parser <InfixFuncall>)
-        (*disj 2)
-    done))
     
     
 (define <InfixMulDiv>
