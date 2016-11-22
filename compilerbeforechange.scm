@@ -32,7 +32,7 @@
 
 (define <sexpr-comment>
   (new (*parser <expression-comment-prefix>)
-       (*delayed (lambda () <Sexpr>))
+       (*delayed (lambda () <Sexpr2>))
        (*caten 2)
        done))
 
@@ -372,7 +372,7 @@ done))
 (define <ProperList>
     (new    
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr>)) *star
+        (*delayed (lambda () <Sexpr2>)) *star
         (*parser (char #\) ))
         (*caten 3)
         (*pack-with 
@@ -383,9 +383,9 @@ done))
 (define <ImproperList>
     (new
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr>)) *plus
+        (*delayed (lambda () <Sexpr2>)) *plus
         (*parser (char #\.))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*parser (char #\) ))
         (*caten 5)
         (*pack-with 
@@ -397,7 +397,7 @@ done))
     (new
         (*parser (char #\# ))
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr>)) *star
+        (*delayed (lambda () <Sexpr2>)) *star
         (*parser (char #\) ))
         (*caten 4)
         (*pack-with 
@@ -407,7 +407,7 @@ done))
 (define <Quated>
     (new
         (*parser (char #\' ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -417,7 +417,7 @@ done))
 (define <QuasiQuated>
     (new
         (*parser (char #\` ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -427,7 +427,7 @@ done))
 (define <Unquated>
     (new
         (*parser (char #\, ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -438,7 +438,7 @@ done))
     (new 
         (*parser (char #\, ))
         (*parser (char #\@ ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 3)
         (*pack-with
             (lambda(qu sh exp)
@@ -536,7 +536,7 @@ done))
 (define <InfixNeg>
     (new 
         (*parser <SubSymbol>)
-        (*delayed (lambda () <InfixFunArray>))
+        (*delayed (lambda () <InfixCarmel>))
         (*caten 2)
          
         (*pack-with (lambda (sub expr)
@@ -546,7 +546,7 @@ done))
 (define <InfixSexprEscape>
    (new
         (*parser <InfixPrefixExtensionPrefix>)
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         
         (*pack-with
@@ -603,7 +603,31 @@ done))
             (lambda (open expr close)
                             `(#f ,expr)))
     done))
-   
+
+(define <InfixArrayGet>
+    (new
+        (*parser <InfixAtom>)
+        
+        (*parser (star <infix-skipped>))
+        
+        (*parser <SquareParen>)
+        *plus
+        
+        (*caten 3)
+         
+         (*pack-with (lambda (atom space paren)
+                        (if (null? paren)
+                            atom
+                            (fold-left 
+                                ( lambda (ans rest) 
+                                `(vector-ref ,ans ,rest)) 
+                                `(vector-ref ,atom ,(car paren))  
+                                    (cdr paren))
+                                             ))) 
+                                             
+
+    done))
+    
     
 (define <InfixArgList>
     (new
@@ -628,7 +652,6 @@ done))
         (*disj 2)
     done))
     
-    
 (define <RoundParen>
     (new
         (*parser (char #\())
@@ -640,11 +663,42 @@ done))
             (lambda (open args close)
                             `(#t ,args)))
     done))
-
     
-
+(define <InfixFuncall>
+    (new
+        (*parser <InfixAtom>)
+        
+        (*parser (star <infix-skipped>))
+        
+        (*parser <RoundParen>)
+        *plus
     
-(define <InfixFunArray>
+        (*caten 3)
+                  
+        (*pack-with (lambda (atom space paren)
+                        (if (null? paren)
+                            atom
+                            (fold-left 
+                                ( lambda (ans rest) 
+                                (cons `,ans `,rest)) 
+                                (cons `,atom `,(car paren))  
+                                    (cdr paren))
+                                             ))) 
+                    
+                    
+     ;   (*parser <InfixAtom>)
+       ; (*disj 2)
+    
+    done))
+    
+(define <InfixWithParen>
+    (new 
+        (*parser <InfixArrayGet>)
+        (*parser <InfixFuncall>)
+        (*disj 2)
+    done))
+    
+(define <InfixCarmel>
     (new
     (*parser <InfixAtom>)
     (*parser (star <infix-skipped>))
@@ -673,11 +727,65 @@ done))
             (if (caar rest)
                (ParenAction (cons ans (cadar rest)) (cdr rest))
                (ParenAction `(vector-ref ,ans ,@(cdar rest)) (cdr rest))))))
+    
+(define <InfixTopRound>
+    (new 
+    (*parser <InfixWithParen>)
+    
+    (*parser (star <infix-skipped>))
+
+    (*parser <RoundParen>)
+    *plus
+    
+        (*caten 3)
+                  
+        (*pack-with (lambda (atom space  paren)
+                        (if (null? paren)
+                            atom
+                            (fold-left 
+                                ( lambda (ans rest) 
+                                (cons `,ans `,rest)) 
+                                (cons `,atom `,(car paren))  
+                                    (cdr paren))
+                                             )))
+    done))
+
+    
+(define <InfixTopSquare>
+    (new 
+        (*parser <InfixWithParen>)
+        
+        (*parser (star <infix-skipped>))
+
+        (*parser <SquareParen>)
+        *plus
+        
+        (*caten 3)
+         
+         (*pack-with (lambda (atom space paren)
+                        (if (null? paren)
+                            atom
+                            (fold-left 
+                                ( lambda (ans rest) 
+                                `(vector-ref ,ans ,rest)) 
+                                `(vector-ref ,atom ,(car paren))  
+                                    (cdr paren))
+                                             ))) 
+    done))
+    
+(define <InfixTop>
+    (new
+        (*parser <InfixTopRound>)
+        (*parser <InfixTopSquare>)
+        (*parser <InfixWithParen>)
+        (*parser <InfixAtom>)
+        (*disj 4)
+    done))
 
 
 (define <InfixPow>
   (new  
-        (*parser <InfixFunArray>)
+        (*parser <InfixCarmel>)
 
         (*parser <PowerSymbol>)
         (*delayed (lambda () <InfixPow>))
@@ -766,7 +874,7 @@ done))
 
 ;--------  S-EXPRESSION ---------------
 
-(define <Sexpr>
+(define <Sexpr2>
  (^<skipped*>
  (new 
        (*parser <Boolean>)
