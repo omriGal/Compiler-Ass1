@@ -3,11 +3,9 @@
 
 (case-sensitive #f)
 
-;;;
-
 (load "~/Downloads/pc.scm") ;; TODO: Change path
 
-;; From tutorial:
+;;;;;;;;;;;; From tutorial ;;;;;;;;;;;;;;;;;;;;;
 
 (define <whitespace>
   (const
@@ -59,6 +57,7 @@
 
 (define ^<skipped*> (^^<wrapped> (star <skip>)))
 
+
 ;;;;;;;;;;;;;;;;;;; Extended Syntax ;;;;;;;;;;;;;;;;;
 
 (define <Boolean>
@@ -78,16 +77,6 @@
 (define <CharPrefix>
   (new  
         (*parser (word "#\\"))
-  done))
-  
-  
-(define <VisibleSimpleChar>
-  (new  
-        (*parser <any-char>)
-        (*parser (range (integer->char 0) (integer->char 32)))
-        *diff
-        (*pack
-        (lambda (ch) ch))
   done))
   
 
@@ -154,6 +143,20 @@ done))
                     (string->number
                         (list->string `,hex ) 16) )))
     done))
+    
+(define <VisibleSimpleChar>
+    (not-followed-by
+
+    (new  
+        (*parser <any-char>)
+        (*parser (range (integer->char 0) (integer->char 32)))
+        *diff
+        (*pack
+        (lambda (ch) ch))
+    done)
+    
+    <HexChar>  
+  ))
     
 (define <Char>
     (new    
@@ -222,12 +225,35 @@ done))
     
     
 (define <Number>
+   (not-followed-by 
+                
     (new
         (*parser <Fraction>)
-        (*parser <Integer>)
-        (*disj 2)
-    done))
-     
+        (*parser <Integer>)       
+        (*disj 2)        
+   done)
+
+   (new
+        (*parser (range #\a #\z))
+        (*parser (range #\A #\Z))
+        (*parser (char #\!))
+        (*parser (char #\$))
+        (*parser (char #\^))
+        (*parser (char #\*))
+        (*parser (char #\-))
+        (*parser (char #\_))
+        (*parser (char #\=))
+        (*parser (char #\+))
+        (*parser (char #\<))
+        (*parser (char #\>))
+        (*parser (char #\?))
+        (*parser (char #\/))
+        (*parser (char #\:))
+        (*disj 15)
+    done)
+   
+   ))
+		
 
 (define <StringLiteralChar>
     (new
@@ -264,15 +290,22 @@ done))
   (new 
         (*parser (char #\\))
         (*parser (char #\x))
-        (*parser <HexChar>) *star
+        (*parser <HexChar>) *plus
+        (*guard
+            (lambda (hex)
+                (<  
+                    (string->number
+                            (list->string `,hex ) 16)
+                    1114112)))
+        
         (*parser (char #\;))
         (*caten 4)
 
         (*pack-with
-            (lambda (a b c d)
+            (lambda (sl x ch delim)
                 (integer->char
                     (string->number
-                        (list->string `,c ) 16) )))
+                        (list->string `,ch ) 16) )))
     done))
 
 (define <StringChar>
@@ -311,7 +344,8 @@ done))
         (*parser (char #\>))
         (*parser (char #\?))
         (*parser (char #\/))
-        (*disj 14)
+        (*parser (char #\:))
+        (*disj 15)
 
         (*pack 
           (lambda (sym) sym))
@@ -445,8 +479,8 @@ done))
         (*delayed (lambda () <InfixExpression>))
         (*parser (char #\)))
         (*caten 3)
-                (*pack-with (lambda (a b c)
-                        b)) 
+                (*pack-with (lambda (open expr close)
+                                                    expr)) 
     done))
     
 (define <InfixSymbolChar>
@@ -502,28 +536,66 @@ done))
 (define <InfixNeg>
     (new 
         (*parser <SubSymbol>)
-        (*delayed (lambda () <InfixMulDiv>))
+        (*delayed (lambda () <InfixTop>))
         (*caten 2)
          
-        (*pack-with (lambda (a b)
-                        `(- ,b)))                  
+        (*pack-with (lambda (sub expr)
+                            `(- ,expr)))                  
     done))
+    
+(define <InfixSexprEscape>
+   (new
+        (*parser <InfixPrefixExtensionPrefix>)
+        (*delayed (lambda () <Sexpr>))
+        (*caten 2)
+        
+        (*pack-with
+            (lambda(extn expr)
+                            expr))
+        
+    done))
+    
+(define <InfixNumber>
+   (not-followed-by 
+                
+    (new
+        (*parser <Fraction>)
+        (*parser <Integer>)       
+        (*disj 2)        
+   done)
+
+   (new
+        (*parser (range #\a #\z))
+        (*parser (range #\A #\Z))
+        (*parser (char #\!))
+        (*parser (char #\$))
+        (*parser (char #\_))
+        (*parser (char #\=))
+        (*parser (char #\<))
+        (*parser (char #\>))
+        (*parser (char #\?))
+        (*parser (char #\:))
+        (*disj 10)
+    done)
+   
+   ))
     
     
 (define <InfixAtom> 
     (new 
-        (*parser <Number>)
+        (*parser <InfixSexprEscape>)
+        (*parser <InfixNumber>)
         (*parser <InfixParen>)
         (*parser <InfixSymbol>)
         (*parser <InfixNeg>)
-        (*disj 4)
+        (*disj 5)
     done)) 
 
 
 (define <SquareParen>
     (new
         (*parser (char #\[))
-        (*parser <InfixAtom>)
+        (*delayed (lambda()  <InfixExpression>))
         (*parser (char #\]))
         (*caten 3)
         
@@ -536,19 +608,21 @@ done))
     (new
         (*parser <InfixAtom>)
         
+        (*parser (star <infix-skipped>))
+        
         (*parser <SquareParen>)
         *plus
         
-        (*caten 2)
+        (*caten 3)
          
-         (*pack-with (lambda (a b)
-                        (if (null? b)
-                            a
+         (*pack-with (lambda (atom space paren)
+                        (if (null? paren)
+                            atom
                             (fold-left 
-                                ( lambda (d x) 
-                                `(vector-ref ,d ,x)) 
-                                `(vector-ref ,a ,(car b))  
-                                    (cdr b))
+                                ( lambda (ans rest) 
+                                `(vector-ref ,ans ,rest)) 
+                                `(vector-ref ,atom ,(car paren))  
+                                    (cdr paren))
                                              ))) 
     done))
     
@@ -562,14 +636,14 @@ done))
         (*caten 2)
         
         (*pack-with 
-          (lambda (a b) b))
+          (lambda (comma expr) expr))
         
         *star
         (*caten 2)
         
         (*pack-with 
-          (lambda (a b) 
-                    `(,a ,@b)))
+          (lambda (expr rest) 
+                    `(,expr ,@rest)))
 
         (*parser (star <infix-skipped>))
         (*pack (lambda (_) '()))
@@ -580,15 +654,17 @@ done))
     (new
     
         (*parser <InfixAtom>)
-    
+        
+        (*parser (star <infix-skipped>))
+        
         (*parser (char #\())
         (*parser <InfixArgList>) 
         (*parser (char #\)))
     
-        (*caten 4)
+        (*caten 5)
     
         (*pack-with 
-          (lambda (fun open args close) 
+          (lambda (fun _ open args close) 
                     (cons fun args)))
                     
         (*parser <InfixAtom>)
@@ -596,15 +672,19 @@ done))
     
     done))
     
-;(define <InfixSexprEscape>
-;    (new
-;
-;    done))
+(define <InfixTop>
+    (new 
+        (*parser <InfixArrayGet>)
+        (*parser <InfixFuncall>)
+        (*disj 2)
+    done))
+    
+
 
 
 (define <InfixPow>
   (new  
-        (*parser <InfixFuncall>)
+        (*parser <InfixTop>)
 
         (*parser <PowerSymbol>)
         (*delayed (lambda () <InfixPow>))
@@ -613,15 +693,14 @@ done))
          
         (*caten 2)
 
-         (*pack-with (lambda (a b)
-                        (if (null? b)
-                            a
+         (*pack-with (lambda (expr sym)
+                        (if (null? sym)
+                            expr
                             (fold-left 
-                                ( lambda (d x) 
-                                `(,(car x) ,d ,@(cdr x))) 
-                                `(,(caar b) ,a ,@(cdar b))  
-                                    (cdr b))
-                                            )))  
+                                ( lambda (ans rest) 
+                                `(,(car rest) ,ans ,@(cdr rest))) 
+                                `(,(caar sym) ,expr ,@(cdar sym))  
+                                    (cdr sym)) ))) 
   done))
     
     
@@ -640,15 +719,14 @@ done))
          
          (*caten 2)
          
-         (*pack-with (lambda (a b)
-                        (if (null? b)
-                            a
+         (*pack-with (lambda (expr sym)
+                        (if (null? sym)
+                            expr
                             (fold-left 
-                                ( lambda (d x) 
-                                `(,(car x) ,d ,@(cdr x))) 
-                                `(,(caar b) ,a ,@(cdar b))  
-                                    (cdr b))
-                                            )))
+                                ( lambda (ans rest) 
+                                `(,(car rest) ,ans ,@(cdr rest))) 
+                                `(,(caar sym) ,expr ,@(cdar sym))  
+                                    (cdr sym)) )))
             done))
 
 (define <InfixAddSub>
@@ -666,14 +744,14 @@ done))
          
          (*caten 2)
          
-         (*pack-with (lambda (a b)
-                        (if (null? b)
-                            a
+         (*pack-with (lambda (expr sym)
+                        (if (null? sym)
+                            expr
                             (fold-left 
-                                ( lambda (d x) 
-                                `(,(car x) ,d ,@(cdr x))) 
-                                `(,(caar b) ,a ,@(cdar b))  
-                                    (cdr b)) )))
+                                ( lambda (ans rest) 
+                                `(,(car rest) ,ans ,@(cdr rest))) 
+                                `(,(caar sym) ,expr ,@(cdar sym))  
+                                    (cdr sym)) )))
                                             
             done))
             
@@ -717,5 +795,4 @@ done))
     done)))
             
 ;; (load "~/Comp/compiler.scm")
-;; (test-string <Sexpr> " ")
 ;; (load "~/Downloads/parser.so")
