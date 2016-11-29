@@ -3,7 +3,8 @@
 
 (case-sensitive #f)
 
-(load "~/Downloads/pc.scm") ;; TODO: Change path
+(load "pc.scm")
+(load "pattern-matcher.scm")
 
 ;;;;;;;;;;;; From tutorial ;;;;;;;;;;;;;;;;;;;;;
 
@@ -32,7 +33,7 @@
 
 (define <sexpr-comment>
   (new (*parser <expression-comment-prefix>)
-       (*delayed (lambda () <Sexpr>))
+       (*delayed (lambda () <Sexpr2>))
        (*caten 2)
        done))
 
@@ -372,7 +373,7 @@ done))
 (define <ProperList>
     (new    
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr>)) *star
+        (*delayed (lambda () <Sexpr2>)) *star
         (*parser (char #\) ))
         (*caten 3)
         (*pack-with 
@@ -383,9 +384,9 @@ done))
 (define <ImproperList>
     (new
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr>)) *plus
+        (*delayed (lambda () <Sexpr2>)) *plus
         (*parser (char #\.))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*parser (char #\) ))
         (*caten 5)
         (*pack-with 
@@ -397,7 +398,7 @@ done))
     (new
         (*parser (char #\# ))
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr>)) *star
+        (*delayed (lambda () <Sexpr2>)) *star
         (*parser (char #\) ))
         (*caten 4)
         (*pack-with 
@@ -407,7 +408,7 @@ done))
 (define <Quated>
     (new
         (*parser (char #\' ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -417,7 +418,7 @@ done))
 (define <QuasiQuated>
     (new
         (*parser (char #\` ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -427,7 +428,7 @@ done))
 (define <Unquated>
     (new
         (*parser (char #\, ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -438,7 +439,7 @@ done))
     (new 
         (*parser (char #\, ))
         (*parser (char #\@ ))
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 3)
         (*pack-with
             (lambda(qu sh exp)
@@ -546,7 +547,7 @@ done))
 (define <InfixSexprEscape>
    (new
         (*parser <InfixPrefixExtensionPrefix>)
-        (*delayed (lambda () <Sexpr>))
+        (*delayed (lambda () <Sexpr2>))
         (*caten 2)
         
         (*pack-with
@@ -766,7 +767,7 @@ done))
 
 ;--------  S-EXPRESSION ---------------
 
-(define <Sexpr>
+(define <Sexpr2>
  (^<skipped*>
  (new 
        (*parser <Boolean>)
@@ -786,6 +787,79 @@ done))
       (*disj 13)
 
     done)))
+    
+;--------  TAG-PARSER ---------------
             
-;; (load "~/Comp/compiler.scm")
-;; (load "~/Downloads/parser.so")
+(define *reserved-words*
+    '(and begin cond define do else if lambda
+        let let* letrec or quasiquote unquote
+        unquote-splicing quote set!))
+        
+(define *void-object* void)
+
+(define constant?
+        (lambda (arg)
+            (or (null? arg)
+                (vector? arg)
+                (boolean? arg)
+                (char? arg)
+                (number? arg)
+                (string? arg))))
+        
+(define variable?
+        (lambda (arg)
+            (and (symbol? arg)
+                (not (member arg *reserved-words*)))))
+                 
+    
+;--------  PARSE ---------------
+
+(define parse
+    (let ((run 
+            (compose-patterns
+                    
+                    (pattern-rule
+                        (? 'c constant?)
+                        (lambda (c) 
+                            `(const ,c)))
+                    
+                    (pattern-rule
+                        `(quote ,(? 'c))
+                        (lambda (c) 
+                            `(const ,c)))
+                    
+                    (pattern-rule
+                        (? 'v variable?)
+                        (lambda (v) 
+                            `(var ,v)))
+                    
+                    (pattern-rule
+                        `(if ,(? 'test) ,(? 'dit) ,(? 'dif))
+                        (lambda (test dit dif) 
+                            `(if3 ,(parse test) ,(parse dit) ,(parse dif))))                    
+                    
+                    (pattern-rule
+                        `(if ,(? 'test) ,(? 'dit))
+                        (lambda (test dit) 
+                            `(if3 ,(parse test) ,(parse dit) (const ,*void-object*))))
+                    
+                    (pattern-rule
+                        `(or . ,(? 'or-exps))
+                        (lambda (or-exps) 
+                            `(or ,(map parse or-exps)))) 
+
+                            ;;let*
+			;	(pattern-rule
+			;		`(let* () ,(? 'expr) . ,(? 'exprs list?))
+			;		(lambda (expr exprs) (parse (beginify (cons expr exprs)))))
+		;		(pattern-rule
+		;			`(let* ((,(? 'var var?) ,(? val?)) . ,(? 'rest)) . ,(? 'exprs))
+		;			(lambda (var val rest exprs) (parse `(let ((,var val)) (let* ,rest . ,exprs)))))
+				;; add more rules here
+				)))
+			
+                            
+                            (lambda (sexpr)
+                                (run sexpr
+                                    (lambda ()	(error 'parse
+                                                        (format "Parser can't recognize expression: ~s" sexpr)))))))
