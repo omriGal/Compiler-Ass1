@@ -3,8 +3,7 @@
 
 (case-sensitive #f)
 
-(load "pc.scm")
-(load "pattern-matcher.scm")
+(load "~/Downloads/pc.scm") ;; TODO: Change path
 
 ;;;;;;;;;;;; From tutorial ;;;;;;;;;;;;;;;;;;;;;
 
@@ -787,133 +786,6 @@ done))
       (*disj 13)
 
     done)))
-    
-;--------  TAG-PARSER ---------------
             
-(define *reserved-words*
-    '(and begin cond define do else if lambda
-        let let* letrec or quasiquote unquote
-        unquote-splicing quote set!))
-        
-(define reserved-word? 
-    (lambda (arg)
-             (member arg *reserved-words*)))
-        
-(define *void-object* void)
-
-(define constant?
-        (lambda (arg)
-            (or (null? arg)
-                (vector? arg)
-                (boolean? arg)
-                (char? arg)
-                (number? arg)
-                (string? arg))))
-        
-(define variable?
-        (lambda (arg)
-            (and (symbol? arg)
-                (not (reserved-word? arg)))))
-                
-(define isArgsLambda?
-        (lambda(arg) 
-              (or (variable? arg) (list? arg) (pair? arg))))
-              
-(define isArgsDefine?
-        (lambda(x) 
-            (or (list? x) (pair? x))))
-                 
-    
-;--------  PARSE ---------------
-
-(define parse
-    (let ((run 
-            (compose-patterns
-                    
-                    (pattern-rule
-                        (? 'c constant?)
-                        (lambda (c) 
-                            `(const ,c)))
-                    
-                    (pattern-rule
-                        `(quote ,(? 'c))
-                        (lambda (c) 
-                            `(const ,c)))
-                    
-                    (pattern-rule
-                        (? 'v variable?)
-                        (lambda (v) 
-                            `(var ,v)))
-                    
-                    (pattern-rule
-                        `(if ,(? 'test) ,(? 'dit) ,(? 'dif))
-                        (lambda (test dit dif) 
-                            `(if3 ,(parse test) ,(parse dit) ,(parse dif))))                    
-                    
-                    (pattern-rule
-                        `(if ,(? 'test) ,(? 'dit))
-                        (lambda (test dit) 
-                            `(if3 ,(parse test) ,(parse dit) (const ,*void-object*))))
-                    
-                    (pattern-rule
-                        `(or . ,(? 'or-exps))
-                        (lambda (or-exps) 
-                            `(or ,(map parse or-exps))))
-                     
-                    ;lambda rule 
-                    (pattern-rule
-                        `(lambda ,(? 'argl isArgsLambda?) ,(? 'exp1) . ,(? 'expRest))
-                        (lambda (argl exp1 expRest)
-                        `(
-                            ,@(identify-lambda argl 
-                                    (lambda(s) `(lambda-simple ,s))
-                                    (lambda(s opt) `(lambda-opt ,s ,opt))
-                                    (lambda (var) `(lambda-var ,var)))
-                            
-                            ,(parse exp1)
-                            ,@(map parse expRest)
-                                    )))
-                    ;define rule 
-                    (pattern-rule
-                        `(define ,(? 'varArg variable?) ,(? 'expr))
-                            (lambda (varArg expr)
-                                `(define (var ,varArg) ,(parse expr))))
-                                
-                    ;MIT-define rule
-                    (pattern-rule
-                        `(define ,(? 'varArg isArgsDefine?) ,(? 'exp1) . ,(? 'expRest))
-                            (lambda (varArg exp1 expRest)
-                                `(define (var ,(car varArg)) ,(parse `(lambda ,(cdr varArg) ,exp1 . ,expRest)))))
-                                
-                    ;Applications rule
-                    (pattern-rule
-                        `( ,(? 'func (lambda(x) (not (reserved-word? x)))) . ,(? 'rest list?))
-                            (lambda (func rest)
-                                `(applic ,(parse func) ,(map parse rest))))
-                            
-                                    
-                            ;;let*
-			;	(pattern-rule
-			;		`(let* () ,(? 'expr) . ,(? 'exprs list?))
-			;		(lambda (expr exprs) (parse (beginify (cons expr exprs)))))
-		;		(pattern-rule
-		;			`(let* ((,(? 'var var?) ,(? val?)) . ,(? 'rest)) . ,(? 'exprs))
-		;			(lambda (var val rest exprs) (parse `(let ((,var val)) (let* ,rest . ,exprs)))))
-				;; add more rules here
-				)))
-			
-                            
-                            (lambda (sexpr)
-                                (run sexpr
-                                    (lambda ()	(error 'parse
-                                                        (format "Parser can't recognize expression: ~s" sexpr)))))))
-                                                        
-(define identify-lambda
-    (lambda (argl ret-simple ret-opt ret-var)
-        (cond   ((null? argl) (ret-simple '()))
-                ((symbol? argl) (ret-var argl))
-                (else (identify-lambda (cdr argl)
-                        (lambda (s) (ret-simple `(,(car argl) ,@s)))
-                        (lambda (s opt) (ret-opt `(,(car argl) ,@s) opt))
-                        (lambda (var) (ret-opt `(,(car argl)) var )))))))
-            
+;; (load "~/Comp/compiler.scm")
+;; (load "~/Downloads/parser.so")
