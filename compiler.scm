@@ -801,9 +801,13 @@ done))
         
 (define *void-object* void)
 
+(define notNull?
+    (lambda(x) (not (null? x))))
+
 (define constant?
         (lambda (arg)
-            (or (null? arg)
+            (or 
+                (null? (null? arg))
                 (vector? arg)
                 (boolean? arg)
                 (char? arg)
@@ -814,16 +818,50 @@ done))
         (lambda (arg)
             (and (symbol? arg)
                 (not (reserved-word? arg)))))
-                
-(define isArgsLambda?
+  
+(define hasDup?
+        (lambda (lst)
+            (cond
+                 ((null? lst) #f)
+                 ((member (car lst) (cdr lst)) #t)
+                (else (hasDup? (cdr lst))))))
+
+(define isLambdaParams?
         (lambda(arg) 
-              (or (variable? arg) (list? arg) (pair? arg))))
-              
+              (cond 
+                 ((null? arg) #t)
+                 ((variable? arg) #t)
+                 ((and (pair? arg) (andmap variable? arg) (not (hasDup? arg))) #t)
+                (else (error 'parser (format "Invalid parameter list: ~s" arg))))))
+                
+                    
 (define isArgsDefine?
-        (lambda(x) 
-            (or (list? x) (pair? x))))
-                 
-    
+        (lambda(arg) 
+            (or (list? arg) (pair? arg))))
+
+;; Verify let args are valid: (<var> <value>)
+(define isLetDef?
+        (lambda(arg)
+            (cond
+                ((not (list? arg)) #f)
+                ((null? arg) #t)
+                ((and 
+                    (list? (car arg)) 
+                    (= (length (car arg)) 2) 
+                    (variable? (caar arg)))
+                                    (isLetDef? (cdr arg)))
+                (else #f))))
+
+;; Arranges the let defines in 2 lists: ( (<vars>) (<values>) )
+(define arrangeLetVarValue
+    (lambda (expr vars values)
+        (if
+            (null? expr)
+            (cons vars values)
+            (arrangeLetVarValue (cdr expr) 
+                                (append vars (list (caar expr))) 
+                                (append values (list (cadar expr)))))))
+
 ;--------  PARSE ---------------
 
 (define parse
@@ -844,7 +882,7 @@ done))
                         (? 'v variable?)
                         (lambda (v) 
                             `(var ,v)))
-                    
+                    ;if rule
                     (pattern-rule
                         `(if ,(? 'test) ,(? 'dit) ,(? 'dif))
                         (lambda (test dit dif) 
@@ -855,23 +893,27 @@ done))
                         (lambda (test dit) 
                             `(if3 ,(parse test) ,(parse dit) (const ,*void-object*))))
                     
+                    ;or rule 
                     (pattern-rule
                         `(or . ,(? 'or-exps))
                         (lambda (or-exps) 
-                            `(or ,(map parse or-exps))))
+                            (cond   
+                                ((null? or-exps) (parse #f))
+                                ((equal? (length or-exps) 1) (parse (car or-exps)))
+                                (else
+                                    `(or ,(map parse or-exps))))))
                      
                     ;lambda rule 
                     (pattern-rule
-                        `(lambda ,(? 'argl isArgsLambda?) ,(? 'exp1) . ,(? 'expRest))
-                        (lambda (argl exp1 expRest)
+                        `(lambda ,(? 'argl isLambdaParams?) . ,(? 'exp1 notNull?))
+                        (lambda (argl exp1)
                         `(
                             ,@(identify-lambda argl 
                                     (lambda(s) `(lambda-simple ,s))
                                     (lambda(s opt) `(lambda-opt ,s ,opt))
                                     (lambda (var) `(lambda-var ,var)))
                             
-                            ,(parse exp1)
-                            ,@(map parse expRest)
+                            ,(parse `(begin ,@exp1))
                                     )))
                     ;define rule 
                     (pattern-rule
@@ -890,6 +932,24 @@ done))
                         `( ,(? 'func (lambda(x) (not (reserved-word? x)))) . ,(? 'rest list?))
                             (lambda (func rest)
                                 `(applic ,(parse func) ,(map parse rest))))
+                       
+                    ;Begin rule   
+                    (pattern-rule
+                        `(begin . ,(? 'begin-exps))
+                        (lambda (begin-exps) 
+                            (cond   
+                                ((null? begin-exps) (parse #f))
+                                ((equal? (length begin-exps) 1) (parse (car begin-exps)))
+                                (else
+                                    `(seq ,(map parse begin-exps))))))
+                                    
+                    ;let rule
+                    (pattern-rule
+                        `(let ,(? 'let-def isLetDef?) . ,(? 'let-exp notNull?))
+                        (lambda (let-def let-exp)
+                            (let ((var-values (arrangeLetVarValue let-def '() '())))
+                                (parse `( (lambda ,(car var-values) ,@let-exp) 
+                                                 ,@(cdr var-values))))))
                             
                                     
                             ;;let*
@@ -905,8 +965,8 @@ done))
                             
                             (lambda (sexpr)
                                 (run sexpr
-                                    (lambda ()	(error 'parse
-                                                        (format "Parser can't recognize expression: ~s" sexpr)))))))
+                                    (lambda ()	(error 'parser
+                                                        (format "Unknown form: ~s" sexpr)))))))
                                                         
 (define identify-lambda
     (lambda (argl ret-simple ret-opt ret-var)
