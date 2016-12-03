@@ -799,7 +799,7 @@ done))
     (lambda (arg)
              (member arg *reserved-words*)))
         
-(define *void-object* void)
+(define *void-object* (if #f #f))
 
 (define notNull?
     (lambda(x) (not (null? x))))
@@ -862,6 +862,14 @@ done))
                                 (append vars (list (caar expr))) 
                                 (append values (list (cadar expr)))))))
 
+(define setLetrecArgs
+    (lambda (vars values ans)
+        (if (null? vars) ans
+            (setLetrecArgs (cdr vars) 
+                            (cdr values)
+                            (append ans `( (set! ,(car vars) ,(car values)) ))))))
+        
+        
 ;--------  PARSE ---------------
 
 (define parse
@@ -919,13 +927,19 @@ done))
                     (pattern-rule
                         `(define ,(? 'varArg variable?) ,(? 'expr))
                             (lambda (varArg expr)
-                                `(define (var ,varArg) ,(parse expr))))
+                                `(def (var ,varArg) ,(parse expr))))
                                 
                     ;MIT-define rule
                     (pattern-rule
                         `(define ,(? 'varArg isArgsDefine?) ,(? 'exp1) . ,(? 'expRest))
                             (lambda (varArg exp1 expRest)
-                                `(define (var ,(car varArg)) ,(parse `(lambda ,(cdr varArg) ,exp1 . ,expRest)))))
+                                `(def (var ,(car varArg)) ,(parse `(lambda ,(cdr varArg) ,exp1 . ,expRest)))))
+                                
+                    ;Assignmnet rule
+                    (pattern-rule
+                        `(set! ,(? 'varArg variable?) ,(? 'exp) )
+                            (lambda (varArg exp)
+                                `(set ,(parse varArg) ,(parse exp))))
                                 
                     ;Applications rule
                     (pattern-rule
@@ -936,7 +950,7 @@ done))
                     ;Begin rule   
                     (pattern-rule
                         `(begin . ,(? 'begin-exps))
-                        (lambda (begin-exps) 
+                         (lambda (begin-exps) 
                             (cond   
                                 ((null? begin-exps) (parse #f))
                                 ((equal? (length begin-exps) 1) (parse (car begin-exps)))
@@ -946,16 +960,26 @@ done))
                     ;let rule
                     (pattern-rule
                         `(let ,(? 'let-def isLetDef?) . ,(? 'let-exp notNull?))
-                        (lambda (let-def let-exp)
+                         (lambda (let-def let-exp)
                             (let ((var-values (arrangeLetVarValue let-def '() '())))
                                 (parse `( (lambda ,(car var-values) ,@let-exp) 
                                                  ,@(cdr var-values))))))
-                            
-                                    
-                            ;;let*
-			;	(pattern-rule
-			;		`(let* () ,(? 'expr) . ,(? 'exprs list?))
-			;		(lambda (expr exprs) (parse (beginify (cons expr exprs)))))
+                    
+                    ;letrec rule
+                    (pattern-rule
+                        `(letrec ,(? 'let-def isLetDef?) . ,(? 'let-exp notNull?))
+                         (lambda (let-def let-exp)
+                            (let* ((var-values (arrangeLetVarValue let-def '() '()))
+                                  (set-values (setLetrecArgs (car var-values) (cdr var-values) '()))
+                                  (false-list (make-list (length (car var-values)) #f)))
+                            (parse `((lambda ,(car var-values) 
+                                                ,@set-values
+                                                ((lambda () ,@let-exp)))
+                                    ,@false-list)))))       
+                    ;let*
+            ;	    (pattern-rule
+	;		`(let* () ,(? 'expr) . ,(? 'exprs list?))
+                ;		(lambda (expr exprs) (parse (beginify (cons expr exprs)))))
 		;		(pattern-rule
 		;			`(let* ((,(? 'var var?) ,(? val?)) . ,(? 'rest)) . ,(? 'exprs))
 		;			(lambda (var val rest exprs) (parse `(let ((,var val)) (let* ,rest . ,exprs)))))
