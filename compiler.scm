@@ -976,16 +976,45 @@ done))
                                                 ,@set-values
                                                 ((lambda () ,@let-exp)))
                                     ,@false-list)))))       
-                    ;let*
-            ;	    (pattern-rule
-	;		`(let* () ,(? 'expr) . ,(? 'exprs list?))
-                ;		(lambda (expr exprs) (parse (beginify (cons expr exprs)))))
-		;		(pattern-rule
-		;			`(let* ((,(? 'var var?) ,(? val?)) . ,(? 'rest)) . ,(? 'exprs))
-		;			(lambda (var val rest exprs) (parse `(let ((,var val)) (let* ,rest . ,exprs)))))
-				;; add more rules here
-				)))
-			
+                    ;let* rule
+                    ;with arguments
+            	    (pattern-rule
+                        `(let* ((,(? 'var variable?) ,(? 'value)) . ,(? 'rest)) . ,(? 'exp notNull?))
+                         (lambda (var value rest exp) 
+                            (parse `(let ((,var ,value))
+                                            ,(if (null? rest)
+                                            (cons 'begin exp)
+                                           `(let* ,rest . ,exp))))))
+                                        
+                    ;Empty arguments
+                    (pattern-rule 
+                        `(let* () ,(? 'exp) . ,(? 'rest list?))
+                         (lambda (exp rest) 
+                                    (parse `((lambda () (begin ,exp ,@rest))))))
+ 
+                    ;;;;;;;;;;;;;;;;;;;;;;;;;; TO DO : ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                    ;;;;  ;;;   ;;;; 
+                      ;;;  ;;;
+                        ;;; 
+                        
+                        ;AND
+            (pattern-rule `(and . ,(? 'exprs))
+                          (lambda (exprs)
+                            (cond ((null? exprs) (parse-2 #t))
+                                  ((= (length exprs) 1) (parse-2 (car exprs)))
+                                  (else (parse-2 (and->if exprs))))))
+          ;COND
+            (pattern-rule `(cond) (lambda () `(const ,(void))))
+            (pattern-rule `(cond (,(? 'test) ,(? 'val) . ,(? 'rest-vals)) . ,(? 'rest))
+                          (lambda (test val rest-vals rest)
+                            (cond ((null? rest) (parse-2 `(if ,test (begin ,val ,@rest-vals))))
+                                  ((eq? test 'else) (parse-2 `(begin ,val ,@rest-vals)))
+                                  ((eq? (caar rest) 'else) (parse-2 `(if ,test (begin ,val ,@rest-vals) ,@(cdar rest))))
+                                  (else (parse-2 `(if ,test (begin ,val ,@rest-vals) (cond ,@rest)))))))
+
+                    )))
                             
                             (lambda (sexpr)
                                 (run sexpr
