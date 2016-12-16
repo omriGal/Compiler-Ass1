@@ -1,10 +1,11 @@
 ;;; compiler.scm
-;;; Programmers: Omri Gal & Carmel Levy, 2016
+;;; Programmers: Omri Gal & Carmel Levy, 2016-17
 
 (case-sensitive #f)
 
 (load "pc.scm")
 (load "pattern-matcher.scm")
+(load "qq.scm")
 
 ;;;;;;;;;;;; From tutorial ;;;;;;;;;;;;;;;;;;;;;
 
@@ -818,7 +819,7 @@ done))
         (lambda (arg)
             (and (symbol? arg)
                 (not (reserved-word? arg)))))
-  
+           
 (define hasDup?
         (lambda (lst)
             (cond
@@ -868,7 +869,28 @@ done))
             (setLetrecArgs (cdr vars) 
                             (cdr values)
                             (append ans `( (set! ,(car vars) ,(car values)) ))))))
-        
+
+(define expand-cond
+    (lambda (condition arg rest-args . rest)
+            (cond ((null? rest) (append `(if ,condition (begin ,arg ,@rest-args))))
+                  ((eq? condition 'else) (append `(begin ,arg ,@rest-args)))
+                  ((eq? (caar rest) 'else) (append `(if ,condition (begin ,arg ,@rest-args) ,@(cdar rest))))
+                  (else (a `(if ,condition (begin ,arg ,@rest-args) (cond ,@rest)))))))
+
+(define splicing-begin 
+    (lambda (exps)
+        (letrec (
+                (inner-search (lambda (func ans args) 
+                                (if (null? args) 
+                                    ans 
+                                    (func (car args) (inner-search func ans (cdr args))))))
+                (inner-splice (lambda (condition rest)
+                                (if (equal? (car condition) 'seq)
+                                        (append (splicing-begin (cdr condition)) rest)
+                                        (if (list? (car condition))
+                                                (append condition rest)
+                                                (cons condition rest))))))
+            (inner-search inner-splice '() exps))))
         
 ;--------  PARSE ---------------
 
@@ -955,8 +977,26 @@ done))
                                 ((null? begin-exps) (parse #f))
                                 ((equal? (length begin-exps) 1) (parse (car begin-exps)))
                                 (else
-                                    `(seq ,(map parse begin-exps))))))
-                                    
+                                   `(seq ,(splicing-begin (map parse begin-exps) ))))))
+
+
+
+;;         (fold-right
+;; 			(lambda (x y)
+;; 				(if (equal? (car x) 'seq)
+;; 					(append (splicing-begin (cdr x)) y)
+;; 					(if (list? (car x))
+;; 						(append x y)
+;; 						(cons x y))))
+;; '() expr))) 
+;;                                
+;; (define fold-right 
+;;     (lambda (f init seq) 
+;;         (if (null? seq) 
+;;         init 
+;;         (f (car seq) 
+;;            (fold-right f init (cdr seq))))))
+                               
                     ;let rule
                     (pattern-rule
                         `(let ,(? 'let-def isLetDef?) . ,(? 'let-exp notNull?))
@@ -975,8 +1015,10 @@ done))
                             (parse `((lambda ,(car var-values) 
                                                 ,@set-values
                                                 ((lambda () ,@let-exp)))
-                                    ,@false-list)))))       
+                                    ,@false-list)))))    
+                                    
                     ;let* rule
+                    
                     ;with arguments
             	    (pattern-rule
                         `(let* ((,(? 'var variable?) ,(? 'value)) . ,(? 'rest)) . ,(? 'exp notNull?))
@@ -991,35 +1033,33 @@ done))
                         `(let* () ,(? 'exp) . ,(? 'rest list?))
                          (lambda (exp rest) 
                                     (parse `((lambda () (begin ,exp ,@rest))))))
- 
-                    ;;;;;;;;;;;;;;;;;;;;;;;;;; TO DO : ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                    ;;;;  ;;;   ;;;; 
-                      ;;;  ;;;
-                        ;;; 
-                        
-                        ;AND
-            (pattern-rule `(and . ,(? 'exprs))
-                          (lambda (exprs)
-                            (cond ((null? exprs) (parse-2 #t))
-                                  ((= (length exprs) 1) (parse-2 (car exprs)))
-                                  (else (parse-2 (and->if exprs))))))
-          ;COND
-            (pattern-rule `(cond) (lambda () `(const ,(void))))
-            (pattern-rule `(cond (,(? 'test) ,(? 'val) . ,(? 'rest-vals)) . ,(? 'rest))
-                          (lambda (test val rest-vals rest)
-                            (cond ((null? rest) (parse-2 `(if ,test (begin ,val ,@rest-vals))))
-                                  ((eq? test 'else) (parse-2 `(begin ,val ,@rest-vals)))
-                                  ((eq? (caar rest) 'else) (parse-2 `(if ,test (begin ,val ,@rest-vals) ,@(cdar rest))))
-                                  (else (parse-2 `(if ,test (begin ,val ,@rest-vals) (cond ,@rest)))))))
 
-                    )))
-                            
-                            (lambda (sexpr)
-                                (run sexpr
-                                    (lambda ()	(error 'parser
-                                                        (format "Unknown form: ~s" sexpr)))))))
+                        
+                    ;And rule
+                    (pattern-rule `(and . ,(? 'exps))
+                        (lambda (exps)
+                            (letrec ((expand-and (lambda (and-exp)
+                                                        (cond 
+                                                            ((null? and-exp) #t)
+                                                            ((equal? (length and-exp) 1) (car and-exp))
+                                                            (else `(if ,(car and-exp) ,(expand-and (cdr and-exp)) #f))))))
+                                (parse (expand-and exps)))))         
+                                                            
+                    ;Cond rule                    
+                    (pattern-rule `(cond (,(? 'condition) ,(? 'arg) . ,(? 'rest-args)) . ,(? 'rest))
+                        (lambda (condition arg rest-args rest)
+                                    (cond   ((null? rest) (parse `(if ,condition (begin ,arg ,@rest-args))))
+                                            ((eq? condition 'else) (parse `(begin ,arg ,@rest-args)))
+                                            ((eq? (caar rest) 'else) (parse `(if ,condition (begin ,arg ,@rest-args) ,@(cdar rest))))
+                                            (else (parse `(if ,condition (begin ,arg ,@rest-args) (cond ,@rest)))))))
+            
+            
+                    )))                            
+                    
+                    (lambda (sexpr)
+                            (run sexpr
+                                (lambda () (error 'parser
+                                                    (format "Unknown form: ~s" sexpr)))))))
                                                         
 (define identify-lambda
     (lambda (argl ret-simple ret-opt ret-var)
