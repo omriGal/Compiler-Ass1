@@ -5,8 +5,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Change to your own location
-(load "~/compilation/ass2/compiler.scm")
-(load "~/compilation/ass2/tagparser.so")
+(load "compiler.scm")
+(load "tagparser.so")
 
 (define my-parse-func parse-2)
 (define staff-parse-func parse)
