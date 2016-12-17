@@ -827,17 +827,22 @@ done))
                  ((member (car lst) (cdr lst)) #t)
                 (else (hasDup? (cdr lst))))))
 
+(define (flatten x)
+  (cond ((null? x) '())
+        ((pair? x) (append (flatten (car x)) (flatten (cdr x))))
+        (else (list x))))                
+                
 (define isLambdaParams?
-        (lambda(arg) 
+        (lambda (arg) 
               (cond 
                  ((null? arg) #t)
                  ((variable? arg) #t)
-                 ((and (pair? arg) (andmap variable? arg) (not (hasDup? arg))) #t)
+                 ((and (pair? arg) (andmap variable? (flatten arg)) (not (hasDup? (flatten arg)))) #t)
                 (else (error 'parser (format "Invalid parameter list: ~s" arg))))))
                 
                     
 (define isArgsDefine?
-        (lambda(arg) 
+        (lambda (arg) 
             (or (list? arg) (pair? arg))))
 
 ;; Verify let args are valid: (<var> <value>)
@@ -945,11 +950,12 @@ done))
                             
                             ,(parse-2 `(begin ,@exp1))
                                     )))
+                                    
                     ;define rule 
                     (pattern-rule
-                        `(define ,(? 'varArg variable?) ,(? 'expr))
+                        `(define ,(? 'varArg variable?) . ,(? 'expr notNull?))
                             (lambda (varArg expr)
-                                `(def (var ,varArg) ,(parse-2 expr))))
+                                `(def (var ,varArg) ,(parse-2 `(begin ,@expr)))))
                                 
                     ;MIT-define rule
                     (pattern-rule
@@ -974,29 +980,11 @@ done))
                         `(begin . ,(? 'begin-exps))
                          (lambda (begin-exps) 
                             (cond   
-                                ((null? begin-exps) (parse-2 #f))
+                                ((null? begin-exps) `(const ,*void-object*))
                                 ((equal? (length begin-exps) 1) (parse-2 (car begin-exps)))
                                 (else
                                    `(seq ,(splicing-begin (map parse-2 begin-exps) ))))))
 
-
-
-;;         (fold-right
-;; 			(lambda (x y)
-;; 				(if (equal? (car x) 'seq)
-;; 					(append (splicing-begin (cdr x)) y)
-;; 					(if (list? (car x))
-;; 						(append x y)
-;; 						(cons x y))))
-;; '() expr))) 
-;;                                
-;; (define fold-right 
-;;     (lambda (f init seq) 
-;;         (if (null? seq) 
-;;         init 
-;;         (f (car seq) 
-;;            (fold-right f init (cdr seq))))))
-                               
                     ;let rule
                     (pattern-rule
                         `(let ,(? 'let-def isLetDef?) . ,(? 'let-exp notNull?))
@@ -1034,6 +1022,10 @@ done))
                          (lambda (exp rest) 
                                     (parse-2 `((lambda () (begin ,exp ,@rest))))))
 
+                    ;Quasi-quate rule
+                    (pattern-rule 
+                        `(,'quasiquote ,(? 'exp)) 
+                         (lambda (x) (parse-2 (expand-qq x))))  
                         
                     ;And rule
                     (pattern-rule `(and . ,(? 'exps))
@@ -1048,17 +1040,17 @@ done))
                     ;Cond rule                    
                     (pattern-rule `(cond (,(? 'condition) ,(? 'arg) . ,(? 'rest-args)) . ,(? 'rest))
                         (lambda (condition arg rest-args rest)
-                                    (cond   ((null? rest) (parse-2 `(if ,condition (begin ,arg ,@rest-args))))
-                                            ((eq? condition 'else) (parse-2 `(begin ,arg ,@rest-args)))
-                                            ((eq? (caar rest) 'else) (parse-2 `(if ,condition (begin ,arg ,@rest-args) ,@(cdar rest))))
-                                            (else (parse-2 `(if ,condition (begin ,arg ,@rest-args) (cond ,@rest)))))))
-            
+                                    (cond   ((eq? condition 'else) (parse-2 `(begin ,arg ,@rest-args)))
+                                            ((null? rest) (parse-2 `(if ,condition (begin ,arg ,@rest-args))))
+                                            ;((eq? condition 'else) (parse-2 `(begin ,arg ,@rest-args)))
+                                            ((eq? (caar rest) 'else) (parse-2 `(if ,condition (begin ,arg ,@rest-args) (begin ,@(cdar rest)))))
+                                            (else (parse-2 `(if ,condition (begin ,arg ,@rest-args) (cond ,@rest)))))))            
             
                     )))                            
                     
                     (lambda (sexpr)
                             (run sexpr
-                                (lambda () (error 'parse-2r
+                                (lambda () (error 'parser
                                                     (format "Unknown form: ~s" sexpr)))))))
                                                         
 (define identify-lambda
