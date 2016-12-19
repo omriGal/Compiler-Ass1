@@ -953,9 +953,9 @@ done))
                                     
                     ;define rule 
                     (pattern-rule
-                        `(define ,(? 'varArg variable?) . ,(? 'expr notNull?))
+                        `(define ,(? 'varArg variable?) ,(? 'expr notNull?))
                             (lambda (varArg expr)
-                                `(def (var ,varArg) ,(parse `(begin ,@expr)))))
+                                `(def (var ,varArg) ,(parse expr))))
                                 
                     ;MIT-define rule
                     (pattern-rule

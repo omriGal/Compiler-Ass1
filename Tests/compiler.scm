@@ -953,9 +953,9 @@ done))
                                     
                     ;define rule 
                     (pattern-rule
-                        `(define ,(? 'varArg variable?) . ,(? 'expr notNull?))
+                        `(define ,(? 'varArg variable?) ,(? 'expr notNull?))
                             (lambda (varArg expr)
-                                `(def (var ,varArg) ,(parse-2 `(begin ,@expr)))))
+                                `(def (var ,varArg) ,(parse-2 expr))))
                                 
                     ;MIT-define rule
                     (pattern-rule
@@ -1042,7 +1042,6 @@ done))
                         (lambda (condition arg rest-args rest)
                                     (cond   ((eq? condition 'else) (parse-2 `(begin ,arg ,@rest-args)))
                                             ((null? rest) (parse-2 `(if ,condition (begin ,arg ,@rest-args))))
-                                            ;((eq? condition 'else) (parse-2 `(begin ,arg ,@rest-args)))
                                             ((eq? (caar rest) 'else) (parse-2 `(if ,condition (begin ,arg ,@rest-args) (begin ,@(cdar rest)))))
                                             (else (parse-2 `(if ,condition (begin ,arg ,@rest-args) (cond ,@rest)))))))            
             

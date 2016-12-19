@@ -7,7 +7,7 @@
 (define sub-exps '())
 (define args '())
 
-(define cse-2
+(define cse
     (lambda (exp)
         (begin
             (set! exprssion exp)
@@ -16,7 +16,9 @@
             (add-sub-exp exp)
             (filter-subexp)
             (remove-redund)
+            (reverse-exp)
             (sort-exp)
+            (reverse-exp)
             (generate-id sub-exps)
             (cond   ((null? sub-exps) exp)
                     ((contain-inner?)
@@ -123,11 +125,11 @@
 
 (define sort-exp
     (lambda()
-        (set! sub-exps (reverse-exp (sort contains? sub-exps)))))
+        (set! sub-exps (sort contains? sub-exps))))
         
 (define reverse-exp
-    (lambda(lst)
-        (fold-right (lambda(a r) (append r (list a))) '() lst)))
+    (lambda()
+        (set! sub-exps (fold-right (lambda(a r) (append r (list a))) '() sub-exps))))
                     
 (define find-replace-inner
     (lambda (sub-list exp gen)
