@@ -1061,3 +1061,43 @@ done))
                         (lambda (s opt) (ret-opt `(,(car argl) ,@s) opt))
                         (lambda (var) (ret-opt `(,(car argl)) var )))))))
             
+
+            
+; ------------------------------------------------------------------
+; ----------------------- Part 3  ----------------------------------
+
+(define inner-eliminate-nested-defines
+    (lambda (parsed-exp ret-ds+es)
+        (display parsed-exp)
+        (display "\n")
+        (display "\n")
+        (if  (null? parsed-exp) (begin (display "null\n") (ret-ds+es '() '()))
+            (inner-eliminate-nested-defines (cdr parsed-exp)
+                                      (lambda (ds es)
+                                            (cond ((equal? (caar parsed-exp) 'def) (display "def\n")
+                                                        (ret-ds+es (cons (car parsed-exp) ds) es))
+                                                  ((eq? (caar parsed-exp) 'seq) (display "Seq\n")
+                                                  (inner-eliminate-nested-defines (cadar parsed-exp)
+                                                                            (lambda (ds1 es1) 
+                                                                                (ret-ds+es)
+                                                                                (append ds1 ds)
+                                                                                (append es1 es))))
+                                            (else ds (cons (car parsed-exp) es))))))))
+
+(define eliminate-nested-define
+    (lambda (expr)
+        (inner-eliminate-nested-defines expr (lambda (x y) (cons (append x y) '())))))
+                
+;; (lambda-simple
+;;   ()
+;;   (seq ((def (var a)
+;;              (lambda-simple (x) (applic (var +) ((const 1) (var x)))))
+;;          (applic (var a) ((const 6))))))
+
+                                                        
+                                                        
+                                                    
+                                    
+        
+
+        
