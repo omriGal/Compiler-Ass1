@@ -805,6 +805,10 @@ done))
 (define notNull?
     (lambda(x) (not (null? x))))
 
+(define notNull-2?
+    (lambda (a b) 
+        (notNull? a)))
+        
 (define constant?
         (lambda (arg)
             (or 
@@ -1068,36 +1072,73 @@ done))
 
 (define inner-eliminate-nested-defines
     (lambda (parsed-exp ret-ds+es)
-        (display parsed-exp)
-        (display "\n")
-        (display "\n")
-        (if  (null? parsed-exp) (begin (display "null\n") (ret-ds+es '() '()))
-            (inner-eliminate-nested-defines (cdr parsed-exp)
-                                      (lambda (ds es)
-                                            (cond ((equal? (caar parsed-exp) 'def) (display "def\n")
+        (if  (null? parsed-exp) (ret-ds+es '() '())     
+               (inner-eliminate-nested-defines (cdr parsed-exp)
+                                      (lambda (ds es)   
+                                            (cond ((eq? (caar parsed-exp) 'def) 
                                                         (ret-ds+es (cons (car parsed-exp) ds) es))
-                                                  ((eq? (caar parsed-exp) 'seq) (display "Seq\n")
+                                                  ((eq? (caar parsed-exp) 'seq) 
                                                   (inner-eliminate-nested-defines (cadar parsed-exp)
                                                                             (lambda (ds1 es1) 
-                                                                                (ret-ds+es)
+                                                                                (ret-ds+es
                                                                                 (append ds1 ds)
-                                                                                (append es1 es))))
-                                            (else ds (cons (car parsed-exp) es))))))))
+                                                                                (append es1 es)))))
+                                            (else (ret-ds+es ds (cons (car parsed-exp) es)))))))))
+                                            
+(define eliminate-nested-defines-helper
+  (lambda (pe ret-ds-es)
+    (if (null? pe)
+        (ret-ds-es '() '())
+        (eliminate-nested-defines-helper
+         (cdr pe)
+         (lambda (ds es)
+           (cond ((eq? (caar pe) 'def) (ret-ds-es (cons (car pe) ds) es))
+                 ((eq? (caar pe) 'seq) (eliminate-nested-defines-helper (cadar pe) (lambda (ds1 es1) (ret-ds-es (append ds1 ds) (append es1 es)))))
+                 (else (ret-ds-es ds (cons (car pe) es)))))))))
+                                            
+                    
+              
+(define eliminate-nested-defines
+  (lambda (exp)
+    (cond ((null? exp) exp)
+          ((and (list? exp) (ormap (lambda (x) (eq? (car exp) x)) '(lambda-simple lambda-var)))
+            (cond ((inner-eliminate-nested-defines (cddr exp) notNull-2?) 
+                        `(,(car exp) ,(cadr exp) ,@(inner-eliminate-nested-defines (cddr exp) 
+                                                                                (lambda (x y)
+                                                                                    (let* ((make-args (map (lambda (exp) `(,@(cadadr exp))) x))
+                                                                                        (make-sets (map (lambda (exp) `(set ,(cadr exp) ,@(eliminate-nested-defines (cddr exp)))) x)))
+                                                                                        `((applic (lambda-simple ,make-args (seq (,make-sets ,@(eliminate-nested-defines y)))) ,(make-list (length make-args) '(const #f)))))))))
+            (else 
+                        `(,(car exp) ,(cadr exp) ,@(eliminate-nested-defines (cddr exp))))))          
+          ((and (list? exp) (eq? (car exp) 'lambda-opt))
+           (cond ((inner-eliminate-nested-defines (cdddr exp) notNull-2?) 
+                        `(,(car exp) ,(cadr exp) ,(caddr exp) ,@(inner-eliminate-nested-defines (cdddr exp) 
+                                                                                (lambda (x y)
+                                                                                    (let* ((makeargs (map (lambda (exp) `(,@(cadadr exp))) x))
+                                                                                        (makesets (map (lambda (exp) `(set ,(cadr exp) ,@(eliminate-nested-defines (cddr exp)))) x)))
+                                                                                        `((applic (lambda-simple ,makeargs (seq (,makesets ,@(eliminate-nested-defines y)))) ,(make-list (length makeargs) '(const #f)))))))))
+            (else 
+                        `(,(car exp) ,(cadr exp) ,(caddr exp) ,@(eliminate-nested-defines (cdddr exp))))))
+          ((list? exp) (map eliminate-nested-defines exp))
+          (else exp))))
+          
+(define remove-applic-lambda-nil
+    (lambda (exp)
+        (cond ((null? exp) exp)
+            ;((and (list? e) (equal? 'applic (car e)) (eq? (caadr e) 'lambda-simple) (null? (cadadr e))) (remove-applic-lambda-nil (car (cddadr e))))
+              ((lambda-to-remove? exp) (remove-applic-lambda-nil (next-lambda exp))) ;(car (cddadr exp))))
+              ((list? exp) (map remove-applic-lambda-nil exp))
+              (else exp))))         
 
-(define eliminate-nested-define
-    (lambda (expr)
-        (inner-eliminate-nested-defines expr (lambda (x y) (cons (append x y) '())))))
-                
-;; (lambda-simple
-;;   ()
-;;   (seq ((def (var a)
-;;              (lambda-simple (x) (applic (var +) ((const 1) (var x)))))
-;;          (applic (var a) ((const 6))))))
+(define lambda-to-remove?
+    (lambda (exp)
+        (and (list? exp) (equal? 'applic (car exp)) (equal? (caadr exp) 'lambda-simple) (null? (lambda-args exp)))))
 
-                                                        
-                                                        
-                                                    
-                                    
-        
+(define next-lambda
+    (lambda (exp)
+        (car (cddadr exp))))
 
-        
+(define lambda-args
+    (lambda (exp)
+        (cadadr exp)))
+
