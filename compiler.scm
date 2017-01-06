@@ -34,7 +34,7 @@
 
 (define <sexpr-comment>
   (new (*parser <expression-comment-prefix>)
-       (*delayed (lambda () <Sexpr2>))
+       (*delayed (lambda () <Sexpr>))
        (*caten 2)
        done))
 
@@ -374,7 +374,7 @@ done))
 (define <ProperList>
     (new    
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr2>)) *star
+        (*delayed (lambda () <Sexpr>)) *star
         (*parser (char #\) ))
         (*caten 3)
         (*pack-with 
@@ -385,9 +385,9 @@ done))
 (define <ImproperList>
     (new
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr2>)) *plus
+        (*delayed (lambda () <Sexpr>)) *plus
         (*parser (char #\.))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*parser (char #\) ))
         (*caten 5)
         (*pack-with 
@@ -399,7 +399,7 @@ done))
     (new
         (*parser (char #\# ))
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr2>)) *star
+        (*delayed (lambda () <Sexpr>)) *star
         (*parser (char #\) ))
         (*caten 4)
         (*pack-with 
@@ -409,7 +409,7 @@ done))
 (define <Quated>
     (new
         (*parser (char #\' ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -419,7 +419,7 @@ done))
 (define <QuasiQuated>
     (new
         (*parser (char #\` ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -429,7 +429,7 @@ done))
 (define <Unquated>
     (new
         (*parser (char #\, ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -440,7 +440,7 @@ done))
     (new 
         (*parser (char #\, ))
         (*parser (char #\@ ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 3)
         (*pack-with
             (lambda(qu sh exp)
@@ -548,7 +548,7 @@ done))
 (define <InfixSexprEscape>
    (new
         (*parser <InfixPrefixExtensionPrefix>)
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         
         (*pack-with
@@ -768,7 +768,7 @@ done))
 
 ;--------  S-EXPRESSION ---------------
 
-(define <Sexpr2>
+(define <Sexpr>
  (^<skipped*>
  (new 
        (*parser <Boolean>)
@@ -1093,7 +1093,7 @@ done))
                                                                                 (lambda (x y)
                                                                                     (let* ((make-args (map (lambda (exp) `(,@(cadadr exp))) x))
                                                                                         (make-sets (map (lambda (exp) `(set ,(cadr exp) ,@(eliminate-nested-defines (cddr exp)))) x)))
-                                                                                        `((applic (lambda-simple ,make-args (seq (,make-sets ,@(eliminate-nested-defines y)))) ,(make-list (length make-args) '(const #f)))))))))
+                                                                                        `((applic (lambda-simple ,make-args (seq (,@make-sets ,@(eliminate-nested-defines y)))) ,(make-list (length make-args) '(const #f)))))))))
             (else 
                         `(,(car exp) ,(get-lambda-args exp) ,@(eliminate-nested-defines (get-lambda-body exp))))))          
           ((and (list? exp) (eq? (car exp) 'lambda-opt))
@@ -1102,7 +1102,7 @@ done))
                                                                                 (lambda (x y)
                                                                                     (let* ((makeargs (map (lambda (exp) `(,@(cadadr exp))) x))
                                                                                         (makesets (map (lambda (exp) `(set ,(cadr exp) ,@(eliminate-nested-defines (cddr exp)))) x)))
-                                                                                        `((applic (lambda-simple ,makeargs (seq (,makesets ,@(eliminate-nested-defines y)))) ,(make-list (length makeargs) '(const #f)))))))))
+                                                                                        `((applic (lambda-simple ,makeargs (seq (,@makesets ,@(eliminate-nested-defines y)))) ,(make-list (length makeargs) '(const #f)))))))))
             (else 
                         `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) ,@(eliminate-nested-defines (get-lambda-opt-body exp))))))
           ((list? exp) (map eliminate-nested-defines exp))
@@ -1128,9 +1128,7 @@ done))
     (lambda (exp)
         (cadadr exp)))
         
-        
 ;; Box-Set
-
 (define get-lambda-args
     (lambda(x)
         (cadr x)))
@@ -1151,13 +1149,6 @@ done))
     (lambda(x)
         (caddr x))) 
         
-       
-        
-;; (define set-box-var
-;;   (lambda (lst)
-;;     (map (lambda (p) `(set (var ,p) (box (var ,p)))) lst)))
-
-
 (define box-set-args
   (lambda (arg lambda-b)
     (cond ((null? lambda-b) lambda-b)
@@ -1185,8 +1176,6 @@ done))
                 (cons (car lst) (find-bounded-args lambda-body (cdr lst)))) 
             (else (find-bounded-args lambda-body (cdr lst))))))
             
-
-
 (define box-set
   (lambda (exp)
     (cond ((null? exp) exp)
@@ -1200,15 +1189,6 @@ done))
                  `(,(car exp) ,(get-lambda-args exp) ,@(box-set lambda-body))
                  (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(make-box lambda-body bounded))))
                  `(,(car exp) ,(get-lambda-args exp) (seq ,(splicing-begin expr)))))))
-          
-;;           ((and (list? e) (equal? 'lambda-simple (car e)))
-;;            (let* ((body (cddr e))
-;;                   (bound-params (filter (match? body) (cadr e))))
-;;              (if (null? bound-params)
-;;                  `(lambda-simple ,(cadr e) ,@(box-set body))
-;;                  (let ((temp `(,@(set-box-var bound-params) ,@(box-set-helper body bound-params))))
-;;                  `(lambda-simple ,(cadr e) (seq ,(remove-seq temp)))))))
-                 
           ((and (list? exp) (equal? 'lambda-opt (car exp)))
            (let* ((lambda-body (get-lambda-opt-body exp))
                   (bounded (find-bounded-args lambda-body (append (get-lambda-opt-args exp) `(,(get-lambda-opt-rest-args exp))))))
@@ -1216,15 +1196,6 @@ done))
                  `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) ,@(box-set lambda-body))
                  (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(make-box lambda-body bounded))))
                  `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) (seq ,(splicing-begin expr)))))))
-                 
-;;           ((and (list? e) (equal? 'lambda-var (car e)))
-;;            (let* ((body (cddr e))
-;;                   (bound-params (filter (match? body) (list (cadr e)))))
-;;              (if (null? bound-params)
-;;                  `(lambda-var ,(cadr e) ,@(box-set body))
-;;                  (let ((temp `(,@(set-box-var bound-params) ,@(box-set-helper body bound-params))))
-;;                  `(lambda-var ,(cadr e) (seq ,(remove-seq temp)))))))
-                 
           ((list? exp) (map box-set exp))
           
           (else exp))))
@@ -1249,10 +1220,6 @@ done))
                 (equal? 'lambda-opt (car lambda-body)) 
                 (not-in param (append (get-lambda-opt-args lambda-body) `(,(get-lambda-opt-rest-args lambda-body))))) 
             (inner-bound? param (get-lambda-opt-body lambda-body)))
-   ;       ((and (list? lambda-body) 
-       ;         (equal? 'lambda-var (car lambda-body)) 
-       ;         (not-in param (list (get-lambda-args lambda-body)))) 
-      ;      (is-bound-in-lambda? param (cddr lambda-body)))
           ((list? lambda-body) 
             (or (arg-bound? param (car lambda-body)) (arg-bound? param (cdr lambda-body))))
           (else #f))))
@@ -1270,15 +1237,11 @@ done))
                 (if (eq? (car lambda-body) 'lambda-simple)
                     (not-in param (get-lambda-args lambda-body))
                     (not-in param (list (get-lambda-args lambda-body))))
-             (inner-bound? param (get-lambda-body body))))
+             (inner-bound? param (get-lambda-body lambda-body))))
           ((and (list? lambda-body) 
                 (equal? 'lambda-opt (car lambda-body)) 
                 (not-in param (append (get-lambda-opt-args lambda-body) `(,(get-lambda-opt-rest-args lambda-body))))) 
             (inner-bound? param (get-lambda-opt-body lambda-body)))
-    ;      ((and (list? body) 
-     ;           (equal? 'lambda-var (car body)) 
-     ;           (not (member param (list (get-lambda-args body))))) 
-   ;          (inner-bound? param (get-lambda-body body)))
           ((equal? `(var ,param) lambda-body) #t)
           ((list? lambda-body) (or (inner-bound? param (car lambda-body)) (inner-bound? param (cdr lambda-body))))
           (else #f))))
@@ -1345,46 +1308,6 @@ done))
             (inner-pe->lex-pe pe (list))
     )))
 
-    
-;; (define annotate-tc
-;;     (letrec* (  (make-or (lambda (expr in-tp?)
-;;                     (if (null? (cdr expr)) (list (helper (car expr) in-tp?))
-;;                                     (append (list (helper (car expr) #f)) (make-or (cdr expr) in-tp?)))))
-;;                 (make-if (lambda (expr in-tp?)
-;;                             `(,(helper (car expr) #f) ,(helper (cadr expr) in-tp?) ,(helper (caddr expr) in-tp?))))
-;;                 (lambda? (lambda (expr)
-;;                             (or (equal? (car expr) 'lambda-simple) (equal? (car expr) 'lambda-var))))
-;;                 (make-lambda-opt (lambda (expr in-tp?)
-;;                             (let (  (title (car expr))
-;;                                     (params (cadr expr))
-;;                                     (opt (caddr expr))
-;;                                     (body (cadddr expr)))
-;;                             `(,title ,params ,opt ,(helper body #t)))))
-;;                 (make-lambda (lambda (expr in-tp?)
-;;                             (let (  (title (car expr))
-;;                                     (params (cadr expr))
-;;                                     (body (caddr expr)))
-;;                             `(,title ,params ,(helper body #t)))))
-;;                 (make-applic (lambda (expr in-tp?)
-;;                             (let (  (op (car expr))
-;;                                     (body (cadr expr)))
-;;                             (if in-tp? `(tc-applic ,(helper op #f) ,(make-or body #f))
-;;                                     `(applic ,(helper op #f) ,(make-or body #f))))))
-;;                 (helper (lambda (expr in-tp?)
-;;                                 (cond
-;;                                     ((not (pair? expr)) expr)
-;;                                     ((equal? (car expr) 'or) `(or ,(make-or (cdr expr) in-tp?)))
-;;                                     ((equal? (car expr) 'if3) `(if3 ,(make-if (cdr expr) in-tp?)))
-;;                                     ((equal? (car expr) 'seq) `(seq ,(make-or (cdr expr) in-tp?)))
-;;                                     ((equal? (car expr) 'lambda-opt) (make-lambda-opt expr in-tp?))
-;;                                     ((lambda? expr) (make-lambda expr in-tp?))
-;;                                     ((equal? (car expr) 'applic) (make-applic (cdr expr) in-tp?))
-;;                                     (else  expr))
-;;                                                 )))
-;;         (lambda (expr)
-;;                 (helper expr #f)
-;; )))
-
 (define verify-list-and
     (lambda (lst cond1)
         (and (list? lst) cond1)))
@@ -1413,25 +1336,25 @@ done))
             (lambda (exp tp?)
                 (cond
                 ((null? exp) exp)
-                ((verify-list-and exp (or  (member (car exp) '(var fvar pvar bvar)) (equal? (car exp)                   'const))) exp)
-                ((verify-list-and exp (member (car exp) '(seq or))) 
+                ((and (list? exp) (or  (member (car exp) '(var fvar pvar bvar)) (equal? (car exp) 'const))) exp)
+                ((and (list? exp) (member (car exp) '(seq or))) 
                     `(,(car exp) ,(make-seq-or (cadr exp) tp?)))
-                ((verify-list-and exp (equal? (car exp) 'if3)) 
+                ((and (list? exp) (equal? (car exp) 'if3)) 
                     ;`(if3 ,(do-annotate (cadr exp) #f) ,(do-annotate (caddr exp) tp?) ,(do-annotate (cadddr exp) tp?)))
                     (make-if exp tp?))
-                ((verify-list-and exp (member (car exp) '(def set box-set))) 
+                ((and (list? exp) (member (car exp) '(def set box-set))) 
                     `(,(car exp) ,(cadr exp) ,@(do-annotate (cddr exp) #f)))
                 ((and (list? exp) (equal? (car exp) 'box-get) `(,(car exp) ,(cadr exp) ,@(do-annotate (cddr exp) #f))))
-                ((verify-list-and exp (equal? (car exp) 'lambda-simple)) 
+                ((and (list? exp) (equal? (car exp) 'lambda-simple)) 
                    ; `(lambda-simple ,(cadr exp) ,@(do-annotate (cddr exp) #t)))
                     (make-lambda-simple exp))
-                ((verify-list-and exp (equal? (car exp) 'lambda-opt)) 
+                ((and (list? exp) (equal? (car exp) 'lambda-opt)) 
                     ;`(lambda-opt ,(cadr exp) ,(caddr exp)  ,@(do-annotate (cdddr exp) #t)))
                     (make-lambda-opt exp))
-                ((verify-list-and exp (equal? (car exp) 'lambda-var)) 
+                ((and (list? exp) (equal? (car exp) 'lambda-var)) 
                  ;   `(lambda-var ,(cadr exp) ,@(do-annotate (cddr exp) #t)))
                     (make-lambda-var exp))
-                ((verify-list-and exp (equal? (car exp) 'applic))
+                ((and (list? exp) (equal? (car exp) 'applic))
                     (if tp? `(tc-applic ,@(do-annotate (cdr exp) #f)) `(applic ,@(do-annotate (cdr exp) #f))))
                 ((list? exp) `(,(do-annotate (car exp) tp?) ,@(do-annotate (cdr exp) tp?)))
                 (else exp)))))
