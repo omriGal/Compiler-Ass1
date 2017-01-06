@@ -1304,8 +1304,139 @@ done))
           (else #f))))
           
           
+          
+(define add-params
+    (let ((list-y (lambda (x) (if (list? x) x (list x)))))
+        (lambda (var-list env)
+            (append (list (list-y var-list)) env))))
+            
+            
+(define get-var-lex
+    (letrec* (  (inner-get-var-lex (lambda (var env loc)
+                    (if (null? env) #f
+                            (let ((ans (search-var-lex var (car env) 0)))
+                                (if ans (cons loc ans)
+                                                    (inner-get-var-lex var (cdr env) (+ loc 1)))))))
+                (search-var-lex (lambda (var lst loc)
+                                (cond
+                                    ((null? lst) #f)
+                                    ((equal? (car lst) var) loc)
+                                    (else (search-var-lex var (cdr lst) (+ loc 1)))  ))))
+                           
+    (lambda (var env)
+        (let   ((var-ans (inner-get-var-lex var env 0)))
+            (cond
+                ((equal? var-ans #f) `(fvar ,var))
+                ((= (car var-ans) 0) `(pvar ,var ,(cdr var-ans)))
+                (else `(bvar ,var ,(- (car var-ans) 1) ,(cdr var-ans)))) ))))
 
 
-        
+(define pe->lex-pe
+    (letrec ((inner-pe->lex-pe (lambda (pe env)
+                            (cond
+                                    ((not (pair? pe)) pe)
+                                    ((or (equal? (car pe) 'lambda-simple) (equal? (car pe) 'lambda-var))
+                                            (list (car pe) (cadr pe) (inner-pe->lex-pe (caddr pe) (add-params (cadr pe) env))))
+                                    ((equal? (car pe) 'lambda-opt)
+                                            (list (car pe) (cadr pe) (caddr pe) (inner-pe->lex-pe (cadddr pe) (add-params (append (cadr pe) (list (caddr pe))) env))))
+                                    ((equal? (car pe) 'var) `,(get-var-lex (cadr pe) env))
+                                    (else (map (lambda (newpe) (inner-pe->lex-pe newpe env)) pe))))))
+        (lambda (pe)
+            (inner-pe->lex-pe pe (list))
+    )))
 
+    
+;; (define annotate-tc
+;;     (letrec* (  (make-or (lambda (expr in-tp?)
+;;                     (if (null? (cdr expr)) (list (helper (car expr) in-tp?))
+;;                                     (append (list (helper (car expr) #f)) (make-or (cdr expr) in-tp?)))))
+;;                 (make-if (lambda (expr in-tp?)
+;;                             `(,(helper (car expr) #f) ,(helper (cadr expr) in-tp?) ,(helper (caddr expr) in-tp?))))
+;;                 (lambda? (lambda (expr)
+;;                             (or (equal? (car expr) 'lambda-simple) (equal? (car expr) 'lambda-var))))
+;;                 (make-lambda-opt (lambda (expr in-tp?)
+;;                             (let (  (title (car expr))
+;;                                     (params (cadr expr))
+;;                                     (opt (caddr expr))
+;;                                     (body (cadddr expr)))
+;;                             `(,title ,params ,opt ,(helper body #t)))))
+;;                 (make-lambda (lambda (expr in-tp?)
+;;                             (let (  (title (car expr))
+;;                                     (params (cadr expr))
+;;                                     (body (caddr expr)))
+;;                             `(,title ,params ,(helper body #t)))))
+;;                 (make-applic (lambda (expr in-tp?)
+;;                             (let (  (op (car expr))
+;;                                     (body (cadr expr)))
+;;                             (if in-tp? `(tc-applic ,(helper op #f) ,(make-or body #f))
+;;                                     `(applic ,(helper op #f) ,(make-or body #f))))))
+;;                 (helper (lambda (expr in-tp?)
+;;                                 (cond
+;;                                     ((not (pair? expr)) expr)
+;;                                     ((equal? (car expr) 'or) `(or ,(make-or (cdr expr) in-tp?)))
+;;                                     ((equal? (car expr) 'if3) `(if3 ,(make-if (cdr expr) in-tp?)))
+;;                                     ((equal? (car expr) 'seq) `(seq ,(make-or (cdr expr) in-tp?)))
+;;                                     ((equal? (car expr) 'lambda-opt) (make-lambda-opt expr in-tp?))
+;;                                     ((lambda? expr) (make-lambda expr in-tp?))
+;;                                     ((equal? (car expr) 'applic) (make-applic (cdr expr) in-tp?))
+;;                                     (else  expr))
+;;                                                 )))
+;;         (lambda (expr)
+;;                 (helper expr #f)
+;; )))
 
+(define verify-list-and
+    (lambda (lst cond1)
+        (and (list? lst) cond1)))
+
+(define annotate-tc 
+    (letrec* (
+        (make-if 
+            (lambda (exp tp?)
+                `(if3 ,(do-annotate (cadr exp) #f) ,(do-annotate (caddr exp) tp?) ,(do-annotate (cadddr exp) tp?))))
+        (make-lambda-simple 
+            (lambda (exp)
+                `(lambda-simple ,(cadr exp) ,@(do-annotate (cddr exp) #t))))
+        (make-lambda-opt
+            (lambda (exp)
+                `(lambda-opt ,(cadr exp) ,(caddr exp)  ,@(do-annotate (cdddr exp) #t))))
+        (make-lambda-var
+            (lambda (exp)
+                 `(lambda-var ,(cadr exp) ,@(do-annotate (cddr exp) #t))))
+        (make-seq-or
+            (lambda (exp tp?)
+                (let* 
+                    (   (tail (list-tail exp (- (length exp) 1)))
+                        (heads (reverse (cdr (reverse exp) ))))
+                    (append (map annotate-tc heads) (do-annotate tail tp?)))))
+        (do-annotate
+            (lambda (exp tp?)
+                (cond
+                ((null? exp) exp)
+                ((verify-list-and exp (or  (member (car exp) '(var fvar pvar bvar)) (equal? (car exp)                   'const))) exp)
+                ((verify-list-and exp (member (car exp) '(seq or))) 
+                    `(,(car exp) ,(make-seq-or (cadr exp) tp?)))
+                ((verify-list-and exp (equal? (car exp) 'if3)) 
+                    ;`(if3 ,(do-annotate (cadr exp) #f) ,(do-annotate (caddr exp) tp?) ,(do-annotate (cadddr exp) tp?)))
+                    (make-if exp tp?))
+                ((verify-list-and exp (member (car exp) '(def set box-set))) 
+                    `(,(car exp) ,(cadr exp) ,@(do-annotate (cddr exp) #f)))
+                ((and (list? exp) (equal? (car exp) 'box-get) `(,(car exp) ,(cadr exp) ,@(do-annotate (cddr exp) #f))))
+                ((verify-list-and exp (equal? (car exp) 'lambda-simple)) 
+                   ; `(lambda-simple ,(cadr exp) ,@(do-annotate (cddr exp) #t)))
+                    (make-lambda-simple exp))
+                ((verify-list-and exp (equal? (car exp) 'lambda-opt)) 
+                    ;`(lambda-opt ,(cadr exp) ,(caddr exp)  ,@(do-annotate (cdddr exp) #t)))
+                    (make-lambda-opt exp))
+                ((verify-list-and exp (equal? (car exp) 'lambda-var)) 
+                 ;   `(lambda-var ,(cadr exp) ,@(do-annotate (cddr exp) #t)))
+                    (make-lambda-var exp))
+                ((verify-list-and exp (equal? (car exp) 'applic))
+                    (if tp? `(tc-applic ,@(do-annotate (cdr exp) #f)) `(applic ,@(do-annotate (cdr exp) #f))))
+                ((list? exp) `(,(do-annotate (car exp) tp?) ,@(do-annotate (cdr exp) tp?)))
+                (else exp)))))
+    
+    (lambda (expr)
+        (do-annotate expr #f))
+        ))
+          
