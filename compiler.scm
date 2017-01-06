@@ -1157,30 +1157,32 @@ done))
 ;;   (lambda (lst)
 ;;     (map (lambda (p) `(set (var ,p) (box (var ,p)))) lst)))
 
-(define box-set-helper
-  (lambda (body ps)
-    (if (null? ps)
-        body
-        (let ((nbody (box-set-p-body (car ps) body)))
-          (box-set-helper nbody (cdr ps))))))
 
-(define box-set-p-body
-  (lambda (p body)
-    (cond ((null? body) body)
-          ((and (list? body) (equal? `(var ,p) body)) `(box-get (var ,p)))
-          ((and (list? body) (equal? 'set (car body)) (equal? `(var ,p) (cadr body))) `(box-set (var ,p) ,@(box-set-p-body p (cddr body))))
-          ((list? body) `(,(box-set-p-body p (car body)) ,@(box-set-p-body p (cdr body))))
-          (else body))))
+(define box-set-args
+  (lambda (arg lambda-b)
+    (cond ((null? lambda-b) lambda-b)
+          ((and (list? lambda-b) 
+                (equal? 'set (car lambda-b)) 
+                (equal? `(var ,arg) (get-lambda-args lambda-b))) 
+            `(box-set (var ,arg) ,@(box-set-args arg (get-lambda-body lambda-b))))
+          ((and (list? lambda-b) 
+                (equal? `(var ,arg) lambda-b)) 
+            `(box-get (var ,arg)))
+          ((list? lambda-b) 
+            `(,(box-set-args arg (car lambda-b)) ,@(box-set-args arg (cdr lambda-b))))
+          (else lambda-b))))
+          
+(define make-box
+  (lambda (lambda-body bounded)
+    (cond   ((null? bounded) lambda-body)
+            (else 
+                (make-box (box-set-args (car bounded) lambda-body) (cdr bounded))))))
           
 (define find-bounded-args
     (lambda (lambda-body lst)
-            (display "lalalala \n")
-
-        (display lst)
-
       (cond ((null? lst) '())
-            
-            (((match? lambda-body) (car lst)) (cons (car lst) (find-bounded-args lambda-body (cdr lst)))) 
+            (((box? lambda-body) (car lst)) 
+                (cons (car lst) (find-bounded-args lambda-body (cdr lst)))) 
             (else (find-bounded-args lambda-body (cdr lst))))))
             
 
@@ -1191,10 +1193,12 @@ done))
           
           ((and (list? exp) (ormap (lambda (x) (eq? (car exp) x)) '(lambda-simple lambda-var)))
             (let* ((lambda-body (get-lambda-body exp))
-                   (bounded (find-bounded-args lambda-body (get-lambda-args exp))))
+                   (bounded (if (eq? (car exp) 'lambda-simple)
+                            (find-bounded-args lambda-body (get-lambda-args exp))
+                            (find-bounded-args lambda-body (list (get-lambda-args exp))))))
              (if (null? bounded)
                  `(,(car exp) ,(get-lambda-args exp) ,@(box-set lambda-body))
-                 (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(box-set-helper lambda-body bounded))))
+                 (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(make-box lambda-body bounded))))
                  `(,(car exp) ,(get-lambda-args exp) (seq ,(splicing-begin expr)))))))
           
 ;;           ((and (list? e) (equal? 'lambda-simple (car e)))
@@ -1210,7 +1214,7 @@ done))
                   (bounded (find-bounded-args lambda-body (append (get-lambda-opt-args exp) `(,(get-lambda-opt-rest-args exp))))))
              (if (null? bounded)
                  `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) ,@(box-set lambda-body))
-                 (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(box-set-helper lambda-body bounded))))
+                 (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(make-box lambda-body bounded))))
                  `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) (seq ,(splicing-begin expr)))))))
                  
 ;;           ((and (list? e) (equal? 'lambda-var (car e)))
@@ -1225,54 +1229,83 @@ done))
           
           (else exp))))
 
-(define match?
-  (lambda (body)
-    (lambda (p)
-      (and (is-bound? p body) (is-set? p body) (is-get? p body)))))
-
-(define is-bound?
-  (lambda (p body)
-    (cond ((null? body) #f)
-          ((and (list? body) (equal? 'lambda-simple (car body)) (not (member p (cadr body)))) (is-bound-in-lambda? p (cddr body)))
-          ((and (list? body) (equal? 'lambda-opt (car body)) (not (member p (append (cadr body) `(,(caddr body)))))) (is-bound-in-lambda? p (cdddr body)))
-          ((and (list? body) (equal? 'lambda-var (car body)) (not (member p (list (cadr body))))) (is-bound-in-lambda? p (cddr body)))
-          ((list? body) (or (is-bound? p (car body)) (is-bound? p (cdr body))))
+(define box?
+  (lambda (lambda-body)
+    (lambda (param)
+      (and  (arg-bound? param lambda-body)
+            (arg-get? param lambda-body)
+            (arg-set? param lambda-body)))))
+                              
+(define arg-bound?
+  (lambda (param lambda-body)
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (ormap (lambda (x) (eq? (car lambda-body) x)) '(lambda-simple lambda-var)) 
+                (if (eq? (car lambda-body) 'lambda-simple)
+                    (not-in param (get-lambda-args lambda-body))
+                    (not-in param (list (get-lambda-args lambda-body)))))
+            (inner-bound? param (get-lambda-body lambda-body)))
+          ((and (list? lambda-body) 
+                (equal? 'lambda-opt (car lambda-body)) 
+                (not-in param (append (get-lambda-opt-args lambda-body) `(,(get-lambda-opt-rest-args lambda-body))))) 
+            (inner-bound? param (get-lambda-opt-body lambda-body)))
+   ;       ((and (list? lambda-body) 
+       ;         (equal? 'lambda-var (car lambda-body)) 
+       ;         (not-in param (list (get-lambda-args lambda-body)))) 
+      ;      (is-bound-in-lambda? param (cddr lambda-body)))
+          ((list? lambda-body) 
+            (or (arg-bound? param (car lambda-body)) (arg-bound? param (cdr lambda-body))))
           (else #f))))
-
-(define is-bound-in-lambda?
-  (lambda (p body)
-    (cond ((null? body) #f)
-          ((and (list? body) (equal? 'lambda-simple (car body)) (not (member p (cadr body)))) (is-bound-in-lambda? p (cddr body)))
-          ((and (list? body) (equal? 'lambda-opt (car body)) (not (member p (append (cadr body) `(,(caddr body)))))) (is-bound-in-lambda? p (cdddr body)))
-          ((and (list? body) (equal? 'lambda-var (car body)) (not (member p (list (cadr body))))) (is-bound-in-lambda? p (cddr body)))
-          ((equal? `(var ,p) body) #t)
-          ((list? body) (or (is-bound-in-lambda? p (car body)) (is-bound-in-lambda? p (cdr body))))
-          (else #f))))
-
-(define is-set?
-  (lambda (p body)
-    (cond ((null? body) #f)
-          ((and (list? body) (equal? 'set (car body)) (equal? `(var ,p) (cadr body))) #t)
-          ((list? body) (or (is-set? p (car body)) (is-set? p (cdr body))))
-          (else #f))))
-
-(define is-get?
-  (lambda (p body)
-    (cond ((null? body) #f)
-          ((and (list? body) (equal? `(var ,p) body)) #t)
-          ((and (list? body) (equal? 'set (car body)) (equal? `(var ,p) (cadr body))) (is-get? p (cddr body)))
-          ((list? body) (or (is-get? p (car body)) (is-get? p (cdr body))))
-          (else #f))))
+          
+(define not-in
+    (lambda (arg lst)
+        (not (member arg lst)))) 
         
 
-(define debug
-(lambda (exp)
-(display "||> Debug wait for Enter")
-(get-line (current-input-port))
-(display "||> ")
-(display exp)(newline)
-(newline)
-exp))
+(define inner-bound?
+  (lambda (param lambda-body)
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (ormap (lambda (x) (eq? (car lambda-body) x)) '(lambda-simple lambda-var)) 
+                (if (eq? (car lambda-body) 'lambda-simple)
+                    (not-in param (get-lambda-args lambda-body))
+                    (not-in param (list (get-lambda-args lambda-body))))
+             (inner-bound? param (get-lambda-body body))))
+          ((and (list? lambda-body) 
+                (equal? 'lambda-opt (car lambda-body)) 
+                (not-in param (append (get-lambda-opt-args lambda-body) `(,(get-lambda-opt-rest-args lambda-body))))) 
+            (inner-bound? param (get-lambda-opt-body lambda-body)))
+    ;      ((and (list? body) 
+     ;           (equal? 'lambda-var (car body)) 
+     ;           (not (member param (list (get-lambda-args body))))) 
+   ;          (inner-bound? param (get-lambda-body body)))
+          ((equal? `(var ,param) lambda-body) #t)
+          ((list? lambda-body) (or (inner-bound? param (car lambda-body)) (inner-bound? param (cdr lambda-body))))
+          (else #f))))
+          
+(define arg-get?
+  (lambda (param lambda-body)
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (equal? `(var ,param) lambda-body)) #t)
+          ((and (list? lambda-body) 
+                (equal? 'set (car lambda-body)) 
+                (equal? `(var ,param) (get-lambda-args lambda-body))) (arg-get? param (get-lambda-body lambda-body)))
+          ((list? lambda-body) (or (arg-get? param (car lambda-body)) (arg-get? param (cdr lambda-body))))
+          (else #f))))
+
+(define arg-set?
+  (lambda (param lambda-body)
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (equal? 'set (car lambda-body)) 
+                (equal? `(var ,param) (get-lambda-args lambda-body))) #t)
+          ((list? lambda-body) (or (arg-set? param (car lambda-body)) (arg-set? param (cdr lambda-body))))
+          (else #f))))
+          
+          
+
+
         
 
 
