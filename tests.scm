@@ -4,7 +4,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(load "compiler_2.scm")
+(load "compiler.scm")
 (define test-func (lambda (x) 
 		    (annotate-tc
 		      (pe->lex-pe

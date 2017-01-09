@@ -34,7 +34,7 @@
 
 (define <sexpr-comment>
   (new (*parser <expression-comment-prefix>)
-       (*delayed (lambda () <Sexpr2>))
+       (*delayed (lambda () <Sexpr>))
        (*caten 2)
        done))
 
@@ -374,7 +374,7 @@ done))
 (define <ProperList>
     (new    
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr2>)) *star
+        (*delayed (lambda () <Sexpr>)) *star
         (*parser (char #\) ))
         (*caten 3)
         (*pack-with 
@@ -385,9 +385,9 @@ done))
 (define <ImproperList>
     (new
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr2>)) *plus
+        (*delayed (lambda () <Sexpr>)) *plus
         (*parser (char #\.))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*parser (char #\) ))
         (*caten 5)
         (*pack-with 
@@ -399,7 +399,7 @@ done))
     (new
         (*parser (char #\# ))
         (*parser (char #\( ))
-        (*delayed (lambda () <Sexpr2>)) *star
+        (*delayed (lambda () <Sexpr>)) *star
         (*parser (char #\) ))
         (*caten 4)
         (*pack-with 
@@ -409,7 +409,7 @@ done))
 (define <Quated>
     (new
         (*parser (char #\' ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -419,7 +419,7 @@ done))
 (define <QuasiQuated>
     (new
         (*parser (char #\` ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -429,7 +429,7 @@ done))
 (define <Unquated>
     (new
         (*parser (char #\, ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         (*pack-with
             (lambda(qu exp)
@@ -440,7 +440,7 @@ done))
     (new 
         (*parser (char #\, ))
         (*parser (char #\@ ))
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 3)
         (*pack-with
             (lambda(qu sh exp)
@@ -548,7 +548,7 @@ done))
 (define <InfixSexprEscape>
    (new
         (*parser <InfixPrefixExtensionPrefix>)
-        (*delayed (lambda () <Sexpr2>))
+        (*delayed (lambda () <Sexpr>))
         (*caten 2)
         
         (*pack-with
@@ -768,7 +768,7 @@ done))
 
 ;--------  S-EXPRESSION ---------------
 
-(define <Sexpr2>
+(define <Sexpr>
  (^<skipped*>
  (new 
        (*parser <Boolean>)
@@ -804,11 +804,11 @@ done))
 
 (define notNull?
     (lambda(x) (not (null? x))))
-    
+
 (define notNull-2?
     (lambda (a b) 
         (notNull? a)))
-    
+        
 (define constant?
         (lambda (arg)
             (or 
@@ -1064,11 +1064,11 @@ done))
                         (lambda (s) (ret-simple `(,(car argl) ,@s)))
                         (lambda (s opt) (ret-opt `(,(car argl) ,@s) opt))
                         (lambda (var) (ret-opt `(,(car argl)) var )))))))
-                
-                
-;-------------------------------------------------------------------------
-;                       Assignment 3
-;-------------------------------------------------------------------------
+            
+
+            
+; ------------------------------------------------------------------
+; ----------------------- Part 3  ----------------------------------
 
 (define inner-eliminate-nested-defines
     (lambda (parsed-exp ret-ds+es)
@@ -1172,7 +1172,7 @@ done))
 (define find-bounded-args
     (lambda (lambda-body lst)
       (cond ((null? lst) '())
-            (((box? lambda-body '() lst) (car lst)) 
+            (((box? lambda-body) (car lst)) 
                 (cons (car lst) (find-bounded-args lambda-body (cdr lst)))) 
             (else (find-bounded-args lambda-body (cdr lst))))))
             
@@ -1201,70 +1201,72 @@ done))
           (else exp))))
 
 (define box?
-  (lambda (lambda-body env params)
+  (lambda (lambda-body)
     (lambda (param)
-      (and  
-            (arg-set? param lambda-body)
+      (and  (arg-bound? param lambda-body)
             (arg-get? param lambda-body)
-            (arg-bound? param params lambda-body env)))))
-            
-(define arg-set?
+            (arg-set? param lambda-body)))))
+                              
+(define arg-bound?
   (lambda (param lambda-body)
     (cond ((null? lambda-body) #f)
-           ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-simple) (member param (get-lambda-args lambda-body))) #f)  
-           ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-opt)  (member param (append (get-lambda-args lambda-body) (list (caddr lambda-body))))) #f)
-           ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-var)  (member param (list (get-lambda-args lambda-body)))) #f)
-
-          ((and (list? lambda-body) (equal? 'set (car lambda-body)) (equal? `(var ,param) (get-lambda-args lambda-body))) #t)
-          ((list? lambda-body) (ormap (lambda (x) (set? param x)) lambda-body))
-          (else #f))))   
-            
+          ((and (list? lambda-body) 
+                (ormap (lambda (x) (eq? (car lambda-body) x)) '(lambda-simple lambda-var)) 
+                (if (eq? (car lambda-body) 'lambda-simple)
+                    (not-in param (get-lambda-args lambda-body))
+                    (not-in param (list (get-lambda-args lambda-body)))))
+            (inner-bound? param (get-lambda-body lambda-body)))
+          ((and (list? lambda-body) 
+                (equal? 'lambda-opt (car lambda-body)) 
+                (not-in param (append (get-lambda-opt-args lambda-body) `(,(get-lambda-opt-rest-args lambda-body))))) 
+            (inner-bound? param (get-lambda-opt-body lambda-body)))
+          ((list? lambda-body) 
+            (or (arg-bound? param (car lambda-body)) (arg-bound? param (cdr lambda-body))))
+          (else #f))))
+          
 (define not-in
     (lambda (arg lst)
         (not (member arg lst)))) 
-            
-(define inner-bound
-    (lambda (param env)
-        (cond 
-            ((null? env) #f)
-            ((member param (car env)) #t)
-            (else (inner-bound param (cdr env))))
-            )) 
-           
-(define arg-bound?
-    (lambda (param params lambda-body env)
-        (cond
-         ((null? lambda-body) #f)
-         ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-simple) (not-in param (get-lambda-args lambda-body))) (arg-bound? param (get-lambda-args lambda-body) (cddr lambda-body) (cons params env)))
-         ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-simple) (member param (get-lambda-args lambda-body))) #f)
         
-         ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-opt) (not-in param (append (get-lambda-args lambda-body) (caddr lambda-body)))) (arg-bound? param 
-                        (append (get-lambda-opt-args lambda-body) (get-lambda-opt-rest-args lambda-body)) (cdddr lambda-body) (cons params env)))
-         ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-opt)  (member param (append (get-lambda-opt-args lambda-body) (list (get-lambda-opt-rest-args lambda-body))))) #f)
-    
-         ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-var) (not-in param (list (get-lambda-args lambda-body)))) (arg-bound? param (get-lambda-args lambda-body) (get-lambda-lambda-body lambda-body) (cons params env)))
-          ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-var)  (member param (list (get-lambda-args lambda-body)))) #f)
-         
-         ((and (equal? `(var ,param) lambda-body) (inner-bound param env)) #t)
-         ((list? lambda-body) (ormap (lambda (x) (arg-bound? param params x env)) lambda-body)) 
-         
-         (else #f))
-        
-        ))
 
+(define inner-bound?
+  (lambda (param lambda-body)
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (ormap (lambda (x) (eq? (car lambda-body) x)) '(lambda-simple lambda-var)) 
+                (if (eq? (car lambda-body) 'lambda-simple)
+                    (not-in param (get-lambda-args lambda-body))
+                    (not-in param (list (get-lambda-args lambda-body))))
+             (inner-bound? param (get-lambda-body lambda-body))))
+          ((and (list? lambda-body) 
+                (equal? 'lambda-opt (car lambda-body)) 
+                (not-in param (append (get-lambda-opt-args lambda-body) `(,(get-lambda-opt-rest-args lambda-body))))) 
+            (inner-bound? param (get-lambda-opt-body lambda-body)))
+          ((equal? `(var ,param) lambda-body) #t)
+          ((list? lambda-body) (or (inner-bound? param (car lambda-body)) (inner-bound? param (cdr lambda-body))))
+          (else #f))))
           
 (define arg-get?
   (lambda (param lambda-body)
-        (cond ((null? lambda-body) #f)
-              ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-simple) (member param (get-lambda-args lambda-body))) #f)  
-              ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-opt)  (member param (append (get-lambda-args lambda-body) (list (caddr lambda-body))))) #f)
-              ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-var)  (member param (list (get-lambda-args lambda-body)))) #f)
-              ((and (list? lambda-body) (equal? `(var ,param) lambda-body)) #t)
-              ((and (list? lambda-body) (equal? 'set (car lambda-body)) (equal? `(var ,param) (get-lambda-args lambda-body))) (arg-get? param (get-lambda-body lambda-body)))
-              ((list? lambda-body) (ormap (lambda (x) (arg-get? param x)) lambda-body))
-             (else #f))         
-             ))
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (equal? `(var ,param) lambda-body)) #t)
+          ((and (list? lambda-body) 
+                (equal? 'set (car lambda-body)) 
+                (equal? `(var ,param) (get-lambda-args lambda-body))) (arg-get? param (get-lambda-body lambda-body)))
+          ((list? lambda-body) (or (arg-get? param (car lambda-body)) (arg-get? param (cdr lambda-body))))
+          (else #f))))
 
+(define arg-set?
+  (lambda (param lambda-body)
+    (cond ((null? lambda-body) #f)
+          ((and (list? lambda-body) 
+                (equal? 'set (car lambda-body)) 
+                (equal? `(var ,param) (get-lambda-args lambda-body))) #t)
+          ((list? lambda-body) (or (arg-set? param (car lambda-body)) (arg-set? param (cdr lambda-body))))
+          (else #f))))
+          
+          
           
 (define add-params
     (let ((list-y (lambda (x) (if (list? x) x (list x)))))
@@ -1360,3 +1362,4 @@ done))
     (lambda (expr)
         (do-annotate expr #f))
         ))
+          
