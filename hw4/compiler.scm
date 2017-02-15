@@ -1372,26 +1372,27 @@ done))
 
 (define code-gen
     (lambda (parsed-exp env) 
-    (begin  
-           (cond
-           ((equal? (car parsed-exp) 'if3) (code-gen-if (cdr parsed-exp) env))
-           ((equal? (car parsed-exp) 'pvar) (code-gen-pvar (cdr parsed-exp) (caddr parsed-exp)))
-           ((equal? (car parsed-exp) 'bvar) (code-gen-bvar (cdr parsed-exp) (caddr parsed-exp) (cadddr parsed-exp)))
-           ((equal? (car parsed-exp) 'fvar) (code-gen-fvar (cdr parsed-exp) env))
-           ((equal? (car parsed-exp) 'seq) (code-gen-seq (cadr parsed-exp) env))
-           ((equal? (car parsed-exp) 'const) (code-gen-const (cdr parsed-exp)))
-           ((equal? (car parsed-exp) 'or) (code-gen-or (cadr parsed-exp) env)) 
-           ((equal? (car parsed-exp) 'set) (code-gen-set (cdr parsed-exp)  env))
-           ((equal? (car parsed-exp) 'box-set) (code-gen-lambda-var (cdr parsed-exp)  env))
-           ((equal? (car parsed-exp) 'box-get) (code-gen-lambda-var (cdr parsed-exp)  env))
-           ((equal? (car parsed-exp) 'box) (code-gen-lambda-var (cdr parsed-exp)  env))
-           ((equal? (car parsed-exp) 'lambda-simple) (code-gen-lambda-simple (cdr parsed-exp) env)) 
-           ((equal? (car parsed-exp) 'lambda-opt) (code-gen-lambda-opt (cdr parsed-exp)  env)) 
-           ((equal? (car parsed-exp) 'lambda-var) (code-gen-lambda-var (cdr parsed-exp)  env))
-           ((equal? (car parsed-exp) 'applic) (code-gen-applic (cdr parsed-exp) env))
-           ((equal? (car parsed-exp) 'def) (code-gen-def parsed-exp(cdr pe)  env))
-           (else `(failed because of: ,@parsed-exp))
-           ))
+            parsed-exp
+;;     (begin  
+;;            (cond
+;;            ((equal? (car parsed-exp) 'if3) (code-gen-if (cdr parsed-exp) env))
+;;            ((equal? (car parsed-exp) 'pvar) (code-gen-pvar (cdr parsed-exp) (caddr parsed-exp)))
+;;            ((equal? (car parsed-exp) 'bvar) (code-gen-bvar (cdr parsed-exp) (caddr parsed-exp) (cadddr parsed-exp)))
+;;            ((equal? (car parsed-exp) 'fvar) (code-gen-fvar (cdr parsed-exp) env))
+;;            ((equal? (car parsed-exp) 'seq) (code-gen-seq (cadr parsed-exp) env))
+;;            ((equal? (car parsed-exp) 'const) (code-gen-const (cdr parsed-exp)))
+;;            ((equal? (car parsed-exp) 'or) (code-gen-or (cadr parsed-exp) env)) 
+;;            ((equal? (car parsed-exp) 'set) (code-gen-set (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'box-set) (code-gen-lambda-var (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'box-get) (code-gen-lambda-var (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'box) (code-gen-lambda-var (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'lambda-simple) (code-gen-lambda-simple (cdr parsed-exp) env)) 
+;;            ((equal? (car parsed-exp) 'lambda-opt) (code-gen-lambda-opt (cdr parsed-exp)  env)) 
+;;            ((equal? (car parsed-exp) 'lambda-var) (code-gen-lambda-var (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'applic) (code-gen-applic (cdr parsed-exp) env))
+;;            ((equal? (car parsed-exp) 'def) (code-gen-def parsed-exp(cdr pe)  env))
+;;            (else `(failed because of: ,@parsed-exp))
+;;            ))
     ))
 
 ;-------------------------------------------------------------------------
@@ -1430,13 +1431,21 @@ done))
                     (iter-chars)))
 ))
 
-(define write_to_file
-	(lambda (str filename)
-		(let ((output (open-output-file filename `replace)))
-			(display str output)
-			(close-output-port output)
-	)))
+(define create_file
+    (lambda(output code)
+        (let ((file (open-output-file output)))
+            (write_to_file PROLOGUE file)
+            (map (lambda (exp) (write_to_file exp file)) code)
+            (display EPILOGUE file)
+            (close-output-port file))
+    ))
 	
+            
+(define write_to_file
+    (lambda(source target)
+        (display source target)
+        (display "\n" target)))
+        
 
 ;-------------------------------------------------------------------------
 ;                       Prepare for compilation
@@ -1470,9 +1479,9 @@ done))
     (lambda (ast)
          (map (lambda (ast-exp) (code-gen ast-exp 0)) ast)))
          
-(define PROLOGUE (read_file "prologue.scm"))
+(define PROLOGUE (list->string (read_file "prologue.scm")))
 
-(define EPILOGUE (read_file "epilogue.scm"))
+(define EPILOGUE (list->string (read_file "epilogue.scm")))
 
 ;-------------------------------------------------------------------------
 ;                       Main
@@ -1484,17 +1493,17 @@ done))
         (let* ( (stream      (read_file inputFile))
                 (tokens      (scanner stream))
                 (ast         (semantic-analyzer tokens))
-                (const-table (build-const-table ast))
-                (fvar-table  (build-fvar-table ast))
-                (code-input  (iter-code-gen ast)) 
+        ;       (const-table (build-const-table ast))
+        ;       (fvar-table  (build-fvar-table ast))
+                (code-input  (iter-code-gen ast))) 
                 
-               (export-file outputFile PROLOGUE (code-gen-primitive) code-input EPILOGUE))
-    ))
+             (create_file outputFile code-input)
+
+;              (create_file outputFile  (code-gen-primitive) code-input )
+    )))
     
-(define compile-scheme-file
-	(lambda (inputfile outputfile)
-		(let* ((input (file->sexpers inputfile))
-			   (lex-pe-input (prep-code-for-compilation input))
-			   (lex-pe-ym (prep-code-for-compilation the-dreaded-ym))
-			   (placeholder (update-const-and-fvar-table (append lex-pe-ym lex-pe-input)))
-			   (coded-input (map code-gen lex-pe-input))
+(define sofi
+    (lambda()
+        (compile-scheme-file "test.scm" "sofi.c")))
+        
+    
