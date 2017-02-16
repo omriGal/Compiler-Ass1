@@ -1377,8 +1377,7 @@ done))
 
 (define code-gen
     (lambda (parsed-exp env) 
-     (begin  
-            (cond
+        (cond
             ((equal? (car parsed-exp) 'if3)             (CODE-GEN-if3 (cdr parsed-exp) env))
             ((equal? (car parsed-exp) 'const)           (CODE-GEN-const (cadr parsed-exp)))
             ((equal? (car parsed-exp) 'seq)             (CODE-GEN-seq-1 (cadr parsed-exp) env))
@@ -1389,14 +1388,14 @@ done))
             ((equal? (car parsed-exp) 'bvar)            (CODE-GEN-bvar (caddr parsed-exp) (cadddr parsed-exp)))
             ((equal? (car parsed-exp) 'fvar)            (CODE-GEN-fvar (cadr parsed-exp)))
             ((equal? (car parsed-exp) 'set)             (CODE-GEN-set  (cadr parsed-exp) (caddr parsed-exp) env))
-;;            ((equal? (car parsed-exp) 'box-set) (code-gen-lambda-var (cdr parsed-exp)  env))
-;;            ((equal? (car parsed-exp) 'box-get) (code-gen-lambda-var (cdr parsed-exp)  env))
-;;            ((equal? (car parsed-exp) 'box) (code-gen-lambda-var (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'box)             (CODE-GEN-box   (cdr parsed-exp)  env))
+;;            ((equal? (car parsed-exp) 'box-set)         (CODE-GEN-box-set (cdr parsed-exp)  env))
+            ((equal? (car parsed-exp) 'box-get)         (CODE-GEN-box-get (cadr parsed-exp)  env))
 ;;            ((equal? (car parsed-exp) 'lambda-opt) (code-gen-lambda-opt (cdr parsed-exp)  env)) 
 ;;            ((equal? (car parsed-exp) 'lambda-var) (code-gen-lambda-var (cdr parsed-exp)  env))
 ;;            ((equal? (car parsed-exp) 'def) (code-gen-def parsed-exp(cdr pe)  env))
             (else `(failed because of: ,@parsed-exp))
-            ))
+            )
     ))
     
     
@@ -1677,14 +1676,45 @@ done))
                     "  MOV(R0, IMM(SOB_VOID));"                 NL
                 )
     ))
+    
 
+    
 
+(define CODE-GEN-box-get
+    (lambda (var env)
+       (cond               
+            ((equal? (car var) 'pvar) 
+                        (CODE-GEN-box-get-pvar (caddr var) env))
+                        
+            ((equal? (car var) 'bvar) 
+                        (CODE-GEN-box-get-bvar (caddr var) (cadddr var) val env))
+                        
+            (else ""))
+        ))
+    
+    
+(define CODE-GEN-box-get-pvar
+    (lambda(minor env)
+        (string-append 
+                "// CODE-GEN BOX-GET-pvar"                NL
+                "  MOV(R0, FPARG(" (n->s (+ minor 2))");" NL 
+                "  MOV(R0, IND(R0));"                     NL
+          )
+    ))
+    
 
-
-
-           
-
-                
+(define CODE-GEN-box-get-bvar
+    (lambda(major minor env)
+        (string-append 
+                "// CODE-GEN BOX-GET-bvar"                NL
+                "  MOV(R0, FPARG(0));"                    NL
+                "  MOV(R0, INDD(R0, " (n->s major) "));"  NL
+                "  MOV(R0, INDD(R0, " (n->s minor) "));"  NL  
+                "  MOV(R0, IND(R0));"                     NL
+           )
+    ))
+    
+    
 
     
 ;-------------------------------------------------------------------------
