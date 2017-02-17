@@ -1388,8 +1388,8 @@ done))
             ((equal? (car parsed-exp) 'bvar)            (CODE-GEN-bvar (caddr parsed-exp) (cadddr parsed-exp)))
             ((equal? (car parsed-exp) 'fvar)            (CODE-GEN-fvar (cadr parsed-exp)))
             ((equal? (car parsed-exp) 'set)             (CODE-GEN-set  (cadr parsed-exp) (caddr parsed-exp) env))
-;;            ((equal? (car parsed-exp) 'box)             (CODE-GEN-box   (cdr parsed-exp)  env))
-;;            ((equal? (car parsed-exp) 'box-set)         (CODE-GEN-box-set (cdr parsed-exp)  env))
+            ((equal? (car parsed-exp) 'box)             (CODE-GEN-box  (cadr parsed-exp)))
+            ((equal? (car parsed-exp) 'box-set)         (CODE-GEN-box-set (cadr parsed-exp) (caddr parsed-exp)  env))
             ((equal? (car parsed-exp) 'box-get)         (CODE-GEN-box-get (cadr parsed-exp)  env))
 ;;            ((equal? (car parsed-exp) 'lambda-opt) (code-gen-lambda-opt (cdr parsed-exp)  env)) 
 ;;            ((equal? (car parsed-exp) 'lambda-var) (code-gen-lambda-var (cdr parsed-exp)  env))
@@ -1425,7 +1425,7 @@ done))
     (lambda (parsed-exp)
         (string-append 
             "  MOV(R0, IMM("
-            (n->s (lookup_const_table parsed-exp *const-table*))
+            (n->s (lookup-const-table parsed-exp *const-table*))
             "));"
         )
     ))
@@ -1676,9 +1676,22 @@ done))
                     "  MOV(R0, IMM(SOB_VOID));"                 NL
                 )
     ))
-    
+
 
     
+(define CODE-GEN-box
+    (lambda (pvar-exp)
+            (let ((minor (caddr pvar-exp)))
+            (string-append  
+                "// CODE-GEN BOX"                               NL                
+                "  MOV(R2, FPARG(" (n->s (+ minor 2)) "));"     NL 
+                "  PUSH(IMM(1));"                               NL 
+                "  CALL(MALLOC);"                               NL
+                "  DROP(1);"                                    NL 
+                "  MOV(IND(R0), R2);" 
+            ))
+    ))
+
 
 (define CODE-GEN-box-get
     (lambda (var env)
@@ -1687,7 +1700,7 @@ done))
                         (CODE-GEN-box-get-pvar (caddr var) env))
                         
             ((equal? (car var) 'bvar) 
-                        (CODE-GEN-box-get-bvar (caddr var) (cadddr var) val env))
+                        (CODE-GEN-box-get-bvar (caddr var) (cadddr var) env))
                         
             (else ""))
         ))
@@ -1715,8 +1728,43 @@ done))
     ))
     
     
+(define CODE-GEN-box-set
+    (lambda(var val env)    
+       (cond               
+            ((equal? (car var) 'pvar) 
+                        (CODE-GEN-box-set-pvar (caddr var) val env))
+                        
+            ((equal? (car var) 'bvar) 
+                        (CODE-GEN-box-set-bvar (caddr var) (cadddr var) val env))
+                        
+            (else ""))
+        ))
+        
 
+(define CODE-GEN-box-set-pvar
+    (lambda(minor val env)
+        (string-append               
+                "// CODE-GEN BOX-SET-pvar"                           NL
+                (code-gen val env)                                   NL 
+                "  MOV(IND(FPARG(" (n->s (+ 2 minor)) ")), R0);"     NL 
+                "  MOV(R0, IMM(SOB_VOID));"                          NL
+    )))
     
+
+(define CODE-GEN-box-set-bvar 
+    (lambda(major minor val env)
+        (string-append
+                "// CODE-GEN BOX-SET-bvar"                  NL
+                (code-gen val env)                          NL 
+                "  MOV(R1, FPARG(0));"                      NL 
+                "  MOV(R1, INDD(R1, "(n->s major)"));"      NL
+                "  MOV(R1, INDD(R1, "(n->s minor)"));"      NL 
+                "  MOV(IND(R1), R0);"                       NL 
+                "  MOV(R0, IMM(SOB_VOID));"                 NL
+            )
+        ))
+        
+        
 ;-------------------------------------------------------------------------
 ;                       Const table
 ;-------------------------------------------------------------------------
@@ -1888,4 +1936,11 @@ done))
     (lambda()
         (compile-scheme-file "test.scm" "sofi.c")))
         
-    
+(define sa
+    (lambda()
+    (let* (     (stream      (read_file "test.scm"))
+                (tokens      (scanner stream))
+                (ast         (semantic-analyzer tokens)) )
+                
+                
+                ast)))
