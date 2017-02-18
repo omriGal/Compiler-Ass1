@@ -1540,7 +1540,7 @@ done))
                 "// Push Closure"                                        NL
                 (code-gen func env)                                      NL
                 "  CMP(INDD(R0, 0), IMM(T_CLOSURE));"                    NL
-                "  JUMP_NE(" L-error-not-closure ");"                    NL
+                "  JUMP_NE(L_error_cannot_apply_none_closure);"          NL
                 "// Push Environment"                                    NL
                 "  PUSH(INDD(R0, 1));"                                   NL
                 "// APPLIC"                                              NL
@@ -1620,7 +1620,7 @@ done))
                     "  PUSH(FP);"                                       NL 
                     "  MOV(FP,SP);"                                     NL 
                     "  CMP(FPARG(1), IMM("(n->s (length (car lambda-exp)))"));" NL
-                    "  JUMP_NE(" L-closure-error-arg-count ");"                 NL
+                    "  JUMP_NE(L_closure_error_args_count);"                 NL
                     (code-gen (cadr lambda-exp) (+ 1 env-depth))                NL
                     "  POP(FP);"                                                NL 
                     "  RETURN;"                                                 NL 
@@ -1802,7 +1802,6 @@ done))
     (lambda (lambda-exp env-depth)
         (let*   ((L-opt-closure-body                (^label-closure-lambda-opt-body))
                  (L-opt-closure-exit                (^label-closure-lambda-opt-end))
-                 (L-opt-error-arg-count             (^label-error-lambda-opt-arg-count))
                          
                  (L-closure-loop-copy-env       (^label-closure-lambda-opt-loop-copy-env))
                  (L-closure-loop-copy-env-end   (^label-closure-lambda-opt-loop-copy-env-end))
@@ -1892,7 +1891,7 @@ done))
                     "  PUSH(FP);"                                       NL 
                     "  MOV(FP,SP);"                                     NL 
                     "  CMP(FPARG(1), IMM("(n->s (length (car lambda-exp)))"));" NL
-                    "  JUMP_LT(" L-opt-error-arg-count ");"                     NL
+                    "  JUMP_LT(L_closure_error_args_count);"                     NL
                     change-opt-to-list
                     (code-gen (caddr lambda-exp) (+ 1 env-depth))               NL
                     "  POP(FP);"                                                NL 
