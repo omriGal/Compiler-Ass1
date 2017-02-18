@@ -1425,8 +1425,9 @@ done))
             ((equal? (car parsed-exp) 'box-set)         (CODE-GEN-box-set (cadr parsed-exp) (caddr parsed-exp)  env))
             ((equal? (car parsed-exp) 'box-get)         (CODE-GEN-box-get (cadr parsed-exp)  env))
             ((equal? (car parsed-exp) 'lambda-opt)      (CODE-GEN-lambda-opt (cdr parsed-exp)  env)) 
-;;            ((equal? (car parsed-exp) 'lambda-var) (code-gen-lambda-var (cdr parsed-exp)  env))
-;;            ((equal? (car parsed-exp) 'def) (code-gen-def parsed-exp(cdr pe)  env))
+            ((equal? (car parsed-exp) 'lambda-var)      (CODE-GEN-lambda-var (cdr parsed-exp)  env))
+            ((equal? (car parsed-exp) 'def)             (CODE-GEN-def (cadadr parsed-exp) (caddr parsed-exp) env))
+            ((equal? (car parsed-exp) 'tc-applic)       (CODE-GEN-tc-applic (cadr parsed-exp) (caddr parsed-exp) env))
             (else `(failed because of: ,@parsed-exp))
             )
     ))
@@ -1512,6 +1513,15 @@ done))
                 (string-append "  PUSH(SOB_NIL);" NL))
                 ""
         ))
+
+(define CODE-GEN-applic-params         
+    (lambda(params env)     
+                (cond   ((null? params) "")
+                        (else (string-append
+                                    (code-gen (car params) env)   NL
+                                    "  PUSH(R0);"                 NL 
+                                    (CODE-GEN-applic-params (cdr params) env)))
+                                                    )))
                                 
 
 (define CODE-GEN-applic
@@ -1519,13 +1529,14 @@ done))
         (letrec*    ((L-error-not-closure       (^label-applic-error-not-closure))
                      (func                      (car applic-exp))
                      (params                    (reverse (cadr applic-exp)))
-                     (CODE-GEN-applic-params    (lambda(params env)     
-                                                            (cond   ((null? params) "")
-                                                                    (else (string-append
-                                                                                (code-gen (car params) env)   NL
-                                                                                "  PUSH(R0);"                 NL 
-                                                                                (CODE-GEN-applic-params (cdr params) env)))
-                                                            ))))
+;;                      (CODE-GEN-applic-params    (lambda(params env)     
+;;                                                             (cond   ((null? params) "")
+;;                                                                     (else (string-append
+;;                                                                                 (code-gen (car params) env)   NL
+;;                                                                                 "  PUSH(R0);"                 NL 
+;;                                                                                 (CODE-GEN-applic-params (cdr params) env)))
+;;                                                             )))
+                                                            )
             (string-append
                  NL
                  "// ***CODE-GEN APPLIC***"                             NL
@@ -1801,7 +1812,7 @@ done))
 (define CODE-GEN-lambda-opt
     (lambda (lambda-exp env-depth)
         (let*   ((L-opt-closure-body                (^label-closure-lambda-opt-body))
-                 (L-opt-closure-exit                (^label-closure-lambda-opt-end))
+                 (L-opt-closure-end                 (^label-closure-lambda-opt-end))
                          
                  (L-closure-loop-copy-env       (^label-closure-lambda-opt-loop-copy-env))
                  (L-closure-loop-copy-env-end   (^label-closure-lambda-opt-loop-copy-env-end))
@@ -1857,7 +1868,7 @@ done))
                                                     "  MOV(R1, R0);"                                    NL 
                                                     "  DECR(R4);"                                       NL
                                                     "  JUMP(" L-closure-opt-loop-create-list ");"       NL 
-                                                    L-closure-opt-loop-create-list-end ":"              NL                                                                "  MOV(FPARG(" (n->s (+ (length (car lambda-exp)) 2)) "), R1);" nl 
+                                                    L-closure-opt-loop-create-list-end ":"              NL                                                                "  MOV(FPARG(" (n->s (+ (length (car lambda-exp)) 2)) "), R1);" NL 
 
                                                     )))
                  (string-append
@@ -1885,7 +1896,7 @@ done))
                     "  MOV(INDD(R0,0),IMM(T_CLOSURE));"                 NL
                     "  MOV(INDD(R0,1),R2);"                             NL
                     "  MOV(INDD(R0,2),LABEL(" L-opt-closure-body "));"  NL
-                    "  JUMP(" L-opt-closure-exit ");"                   NL NL
+                    "  JUMP(" L-opt-closure-end ");"                   NL NL
                     "// Closure body"                                   NL
                     L-opt-closure-body ":"                              NL
                     "  PUSH(FP);"                                       NL 
@@ -1896,12 +1907,135 @@ done))
                     (code-gen (caddr lambda-exp) (+ 1 env-depth))               NL
                     "  POP(FP);"                                                NL 
                     "  RETURN;"                                                 NL 
-                    L-opt-closure-exit ":"                                      NL
+                    L-opt-closure-end ":"                                      NL
                     )) 
             ))
                     
+(define CODE-GEN-lambda-var
+    (lambda (lambda-exp env-depth)
+        (let*   ((L-var-closure-body                (^label-closure-var-body))
+                 (L-var-closure-end                 (^label-closure-var-end))
+                         
+                 (L-closure-loop-copy-env       (^label-closure-var-loop-copy-env))
+                 (L-closure-loop-copy-env-end   (^label-closure-var-loop-copy-env-end))
+                 (copy-env-loop                 (string-append
+                                                    "// Copy environments"                          NL
+                                                    "  MOV(R3, IMM(0));"                            NL 
+                                                    "  MOV(R4, IMM(1));"                            NL 
+                                                    L-closure-loop-copy-env ":"                     NL 
+                                                    "  CMP(R3, IMM("(n->s env-depth)"));"           NL
+                                                    "  JUMP_EQ (" L-closure-loop-copy-env-end ");"  NL 
+                                                    "  MOV(INDD(R2, R4), INDD(R1, R3));"            NL
+                                                    "  INCR(R3);"                                   NL
+                                                    "  INCR(R4);"                                   NL 
+                                                    "  JUMP("L-closure-loop-copy-env ");"           NL
+                                                    L-closure-loop-copy-env-end ":"                 NL
+                                                    ))
+                 
+                 (L-closure-loop-copy-stack      (^label-closure-var-loop-copy-stack))
+                 (L-closure-loop-copy-stack-end  (^label-closure-var-loop-copy-stack-end))
+                 (copy-stack-loop                (string-append
+                                                    "// Copy from stack"                            NL
+                                                    "  MOV(R4, IMM(0));"                            NL
+                                                    "  MOV(R5, IMM(2));"                            NL
+                                                    L-closure-loop-copy-stack ":"                   NL
+                                                    "  CMP(R4, R3);"                                NL
+                                                    "  JUMP_EQ(" L-closure-loop-copy-stack-end ");" NL 
+                                                    "  MOV(INDD(INDD(R2,0),R4),FPARG(R5));"         NL
+                                                    "  INCR(R4);"                                   NL 
+                                                    "  INCR(R5);"                                   NL
+                                                    "  JUMP(" L-closure-loop-copy-stack ");"        NL 
+                                                    L-closure-loop-copy-stack-end ":"               NL  
+                                                    ))
                                                     
-                        
+                  (L-closure-var-loop-create-list           (^label-closure-var-loop-create-list))
+                  (L-closure-var-loop-create-list-end       (^label-closure-var-loop-create-list-end))
+                  (change-var-to-list             (string-append
+                                                    "//Converting variadic Parameters to List"          NL
+                                                    "  MOV(R1, SOB_NIL);"                               NL
+                                                    "  MOV(R4, FPARG(1));"                              NL
+                                                    "  INCR(R4);"                                       NL
+                                                    L-closure-var-loop-create-list ":"                  NL
+                                                    "  CMP(R4, IMM(1));"                                NL 
+                                                    "  JUMP_EQ(" L-closure-var-loop-create-list-end ");" NL
+                                                    "  PUSH(R1);"                                       NL 
+                                                    "  PUSH(FPARG(R4));"                                NL 
+                                                    "  CALL(MAKE_SOB_PAIR);"                            NL 
+                                                    "  DROP(2);"                                        NL 
+                                                    "  MOV(R1, R0);"                                    NL 
+                                                    "  DECR(R4);"                                       NL
+                                                    "  JUMP(" L-closure-var-loop-create-list ");"       NL 
+                                                    L-closure-var-loop-create-list-end ":"              NL                                                                "  MOV(FPARG(2), R1);"                              NL 
+
+                                                    )))
+                 (string-append
+                    NL
+                    "// ***CODE-GEN LAMBDA-VAR***"                      NL
+                    "  MOV(R1, FPARG(0));"                              NL 
+                    "  MOV(R3,IMM(" (n->s (+ 1 env-depth)) "));"        NL
+                    "  PUSH(R3);"                                       NL
+                    "  CALL(MALLOC);"                                   NL
+                    "  DROP(1);"                                        NL
+                    "  MOV(R2, R0);"                                    NL
+                    copy-env-loop
+                    "  CMP(IMM(" (n->s env-depth) "), IMM(0));"         NL 
+                    "  JUMP_EQ(" L-closure-loop-copy-stack-end ")"      NL
+                    "  MOV(R3,FPARG(1));"                               NL  
+                    "  PUSH(R3);"                                       NL
+                    "  CALL(MALLOC);"                                   NL
+                    "  DROP(1);"                                        NL
+                    "  MOV(INDD(R2,0), R0);"                            NL    
+                    copy-stack-loop
+                    "// Create Closure"                                 NL
+                    "  PUSH(IMM(3));"                                   NL 
+                    "  CALL(MALLOC);"                                   NL
+                    "  DROP(1);"                                        NL 
+                    "  MOV(INDD(R0,0),IMM(T_CLOSURE));"                 NL
+                    "  MOV(INDD(R0,1),R2);"                             NL
+                    "  MOV(INDD(R0,2),LABEL(" L-var-closure-body "));"  NL
+                    "  JUMP(" L-var-closure-end ");"                   NL NL
+                    "// Closure body"                                   NL
+                    L-var-closure-body ":"                              NL
+                    "  PUSH(FP);"                                       NL 
+                    "  MOV(FP,SP);"                                     NL 
+                    change-var-to-list
+                    (code-gen (cadr lambda-exp) (+ 1 env-depth))        NL
+                    "  POP(FP);"                                        NL 
+                    "  RETURN;"                                         NL 
+                    L-var-closure-end ":"                               NL
+                    )) 
+            ))
+            
+
+(define CODE-GEN-def
+    (lambda (var val env)
+        (string-append 
+            "// ***CODE-GEN DEF***"                                           NL
+            (code-gen val env)                                                NL
+            "  MOV(IND("(n->s (lookup-fvar-table var *fvar-table*))"), R0);"  NL
+            "  MOV(R0, IMM(SOB_VOID));"                                       NL 
+        )
+    ))
+
+    
+(define CODE-GEN-tc-applic
+    (lambda (proc args env)
+        (string-append 
+            "// ***CODE-GEN TC-APPLIC***"                                     NL
+            "  PUSH(IMM(T_NIL));"                                             NL
+            (CODE-GEN-applic-params args env)                                 NL
+            "  PUSH(IMM(" (n->s (length args)) "));"                          NL       
+            (code-gen proc env)                                               NL
+            "  CMP(INDD(R0,0), IMM(T_CLOSURE));"                              NL
+            "  JUMP_NE(L_error_cannot_apply_none_closure);"                   NL
+            "// Push Environment"                                             NL
+            "  PUSH(INDD(R0, 1));"                                            NL
+            "  PUSH(FPARG(-1));"                                              NL
+            "  MOV(FP, FPARG(-2));"                                           NL
+            "  JUMPA(INDD(R0, 2));"                                           NL
+        )
+    ))
+    
 
                                                 
 ;-------------------------------------------------------------------------
@@ -2036,11 +2170,12 @@ done))
 (define semantic-analyzer
     (lambda (tokens)
         (map (lambda (sub-sexpr)
+                        (annotate-tc
                               (pe->lex-pe 
                                 (box-set 
                                     (remove-applic-lambda-nil
                                         (eliminate-nested-defines 
-                                            (parse sub-sexpr))))))
+                                            (parse sub-sexpr)))))))
             tokens)
     ))
 
