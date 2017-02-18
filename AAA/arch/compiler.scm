@@ -1189,29 +1189,57 @@ done))
                 (cons (car lst) (find-bounded-args lambda-body (cdr lst)))) 
             (else (find-bounded-args lambda-body (cdr lst))))))
             
+
+(define change-to-box
+    (lambda (params lambda-body)
+       (if (null? params)
+            (box-set lambda-body)
+           (change-to-box (cdr params) (box-param (car params) lambda-body)))
+       ))
+       
+(define box-param
+    (lambda (param lambda-body)
+            (cond
+                ((null? lambda-body) lambda-body)
+                ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-simple) (member param (cadr lambda-body))) lambda-body)  
+              ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-opt)  (member param (append (cadr lambda-body) (list (caddr lambda-body))))) lambda-body)
+              ((and (list? lambda-body) (equal? (car lambda-body) 'lambda-var)  (member param (list (cadr lambda-body)))) lambda-body)
+                ((and (list? lambda-body) (equal? 'var (car lambda-body)) (equal? param (cadr lambda-body))) `(box-get (var ,(cadr lambda-body)) ,@(box-param param (cddr lambda-body))))
+                ((and (list? lambda-body) (equal? 'set (car lambda-body)) (equal? param (cadadr lambda-body))) `(box-set (var ,(cadadr lambda-body)) ,@(box-param param (cddr lambda-body))))
+                ((list? lambda-body) (map (lambda (x) (box-param param x)) lambda-body))
+                (else lambda-body))
+    ))
+
+
 (define box-set
-  (lambda (exp)
-    (cond ((null? exp) exp)
-          
-          ((and (list? exp) (ormap (lambda (x) (eq? (car exp) x)) '(lambda-simple lambda-var)))
-            (let* ((lambda-body (get-lambda-body exp))
-                   (bounded (if (eq? (car exp) 'lambda-simple)
-                            (find-bounded-args lambda-body (get-lambda-args exp))
-                            (find-bounded-args lambda-body (list (get-lambda-args exp))))))
-             (if (null? bounded)
-                 `(,(car exp) ,(get-lambda-args exp) ,@(box-set lambda-body))
-                 (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(make-box lambda-body bounded))))
-                 `(,(car exp) ,(get-lambda-args exp) (seq ,(splicing-begin expr)))))))
-          ((and (list? exp) (equal? 'lambda-opt (car exp)))
-           (let* ((lambda-body (get-lambda-opt-body exp))
-                  (bounded (find-bounded-args lambda-body (append (get-lambda-opt-args exp) `(,(get-lambda-opt-rest-args exp))))))
-             (if (null? bounded)
-                 `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) ,@(box-set lambda-body))
-                 (let* ((expr `(,@(map (lambda (x) `(set (var ,x) (box (var ,x)))) bounded) ,@(make-box lambda-body bounded))))
-                 `(,(car exp) ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) (seq ,(splicing-begin expr)))))))
-          ((list? exp) (map box-set exp))
-          
-          (else exp))))
+    (lambda (exp)
+        (cond ((null? exp) exp)
+              ((and (list? exp) (equal? (car exp) 'lambda-simple)) 
+              (let ((boxing (filter (box? (get-lambda-body exp) '() (get-lambda-args exp)) (get-lambda-args exp))))
+              
+                  (if (null? boxing) `(lambda-simple ,(get-lambda-args exp) ,@(box-set (get-lambda-body exp)))   
+                                  (let  ((do-box  (map (lambda(param) `(set (var ,param) (box (var ,param)))) boxing))
+                                         (replace-body (splicing-begin (change-to-box boxing (get-lambda-body exp)))))
+             `(lambda-simple (,@(get-lambda-args exp)) (seq  (,@do-box ,@replace-body)))))))
+             
+             ((and (list? exp) (equal? (car exp) 'lambda-opt)) 
+              (let ((boxing (filter (box? (get-lambda-opt-body exp) '() (get-lambda-opt-args exp)) (append (get-lambda-opt-args exp) (list (get-lambda-opt-rest-args exp))))))
+                  (if (null? boxing) `(lambda-opt ,(get-lambda-opt-args exp) ,(get-lambda-opt-rest-args exp) ,@(box-set (get-lambda-opt-body exp)))   
+                                  (let  ((do-box  (map (lambda(param) `(set (var ,param) (box (var ,param)))) boxing))
+                                         (replace-body (splicing-begin (change-to-box boxing (get-lambda-opt-body exp)))))
+              `(lambda-opt (,@(get-lambda-opt-args exp)) ,(get-lambda-opt-rest-args exp) (seq  (,@do-box ,@replace-body)))))))
+             
+             ((and (list? exp) (equal? (car exp) 'lambda-var)) 
+              (let ((boxing (filter (box? (get-lambda-body exp) '() (list (get-lambda-args exp))) (list (get-lambda-args exp)))))
+                  (if (null? boxing) `(lambda-var ,(get-lambda-args exp) ,@(box-set (get-lambda-body exp)))   
+                                  (let  ((do-box  (map (lambda(param) `(set (var ,param) (box (var ,param)))) boxing))
+                                         (replace-body (splicing-begin (change-to-box boxing (get-lambda-body exp)))))
+           `(lambda-var ,(get-lambda-args exp) (seq  (,@do-box ,@replace-body)))))))
+             ((list? exp) (map box-set exp))
+             (else exp)
+             )
+             ))   
+             
 
 
 (define arg-set?
@@ -1224,6 +1252,9 @@ done))
           ((and (list? lambda-body) (equal? 'set (car lambda-body)) (equal? `(var ,param) (get-lambda-args lambda-body))) #t)
           ((list? lambda-body) (ormap (lambda (x) (arg-set? param x)) lambda-body))
           (else #f))))   
+
+
+
             
 (define not-in
     (lambda (arg lst)
@@ -1270,6 +1301,8 @@ done))
               ((list? lambda-body) (ormap (lambda (x) (arg-get? param x)) lambda-body))
              (else #f))         
              ))
+
+
 
           
 (define add-params
@@ -1391,7 +1424,7 @@ done))
             ((equal? (car parsed-exp) 'box)             (CODE-GEN-box  (cadr parsed-exp)))
             ((equal? (car parsed-exp) 'box-set)         (CODE-GEN-box-set (cadr parsed-exp) (caddr parsed-exp)  env))
             ((equal? (car parsed-exp) 'box-get)         (CODE-GEN-box-get (cadr parsed-exp)  env))
-;;            ((equal? (car parsed-exp) 'lambda-opt) (code-gen-lambda-opt (cdr parsed-exp)  env)) 
+            ((equal? (car parsed-exp) 'lambda-opt)      (CODE-GEN-lambda-opt (cdr parsed-exp)  env)) 
 ;;            ((equal? (car parsed-exp) 'lambda-var) (code-gen-lambda-var (cdr parsed-exp)  env))
 ;;            ((equal? (car parsed-exp) 'def) (code-gen-def parsed-exp(cdr pe)  env))
             (else `(failed because of: ,@parsed-exp))
@@ -1522,15 +1555,15 @@ done))
 (define CODE-GEN-lambda-simple
     (lambda (lambda-exp env-depth)
         (let*   ((L-closure-body                (^label-closure-body))
-                 (L-closure-error-args-count    (^label-error-lambda-args-count))
+                 (L-closure-error-arg-count     (^label-error-lambda-arg-count))
                  (L-closure-exit                (^label-closure-exit))
                  
                  (L-closure-loop-copy-env       (^label-closure-loop-copy-env))
                  (L-closure-loop-copy-env-end   (^label-closure-loop-copy-env-end))
                  (copy-env-loop                 (string-append
                                                     "// Copy environments"                          NL
-                                                    "  MOV(R3,IMM(0));"                             NL 
-                                                    "  MOV(R4,IMM(1));"                             NL 
+                                                    "  MOV(R3, IMM(0));"                            NL 
+                                                    "  MOV(R4, IMM(1));"                            NL 
                                                     L-closure-loop-copy-env ":"                     NL 
                                                     "  CMP(R3, IMM("(n->s env-depth)"));"           NL
                                                     "  JUMP_EQ (" L-closure-loop-copy-env-end ");"  NL 
@@ -1545,8 +1578,8 @@ done))
                 (L-closure-loop-copy-stack-end  (^label-closure-loop-copy-stack-end))
                 (copy-stack-loop                (string-append
                                                     "// Copy from stack"                            NL
-                                                    "  MOV(R4,IMM(0));"                             NL
-                                                    "  MOV(R5,IMM(2));"                             NL
+                                                    "  MOV(R4, IMM(0));"                            NL
+                                                    "  MOV(R5, IMM(2));"                            NL
                                                     L-closure-loop-copy-stack ":"                   NL
                                                     "  CMP(R4, R3);"                                NL
                                                     "  JUMP_EQ(" L-closure-loop-copy-stack-end ");" NL 
@@ -1587,7 +1620,7 @@ done))
                     "  PUSH(FP);"                                       NL 
                     "  MOV(FP,SP);"                                     NL 
                     "  CMP(FPARG(1), IMM("(n->s (length (car lambda-exp)))"));" NL
-                    "  JUMP_NE(" L-closure-error-args-count ");"                NL
+                    "  JUMP_NE(" L-closure-error-arg-count ");"                 NL
                     (code-gen (cadr lambda-exp) (+ 1 env-depth))                NL
                     "  POP(FP);"                                                NL 
                     "  RETURN;"                                                 NL 
@@ -1764,7 +1797,114 @@ done))
             )
         ))
         
-        
+
+(define CODE-GEN-lambda-opt
+    (lambda (lambda-exp env-depth)
+        (let*   ((L-opt-closure-body                (^label-closure-lambda-opt-body))
+                 (L-opt-closure-exit                (^label-closure-lambda-opt-end))
+                 (L-opt-error-arg-count             (^label-error-lambda-opt-arg-count))
+                         
+                 (L-closure-loop-copy-env       (^label-closure-lambda-opt-loop-copy-env))
+                 (L-closure-loop-copy-env-end   (^label-closure-lambda-opt-loop-copy-env-end))
+                 (copy-env-loop                 (string-append
+                                                    "// Copy environments"                          NL
+                                                    "  MOV(R3, IMM(0));"                            NL 
+                                                    "  MOV(R4, IMM(1));"                            NL 
+                                                    L-closure-loop-copy-env ":"                     NL 
+                                                    "  CMP(R3, IMM("(n->s env-depth)"));"           NL
+                                                    "  JUMP_EQ (" L-closure-loop-copy-env-end ");"  NL 
+                                                    "  MOV(INDD(R2, R4), INDD(R1, R3));"            NL
+                                                    "  INCR(R3);"                                   NL
+                                                    "  INCR(R4);"                                   NL 
+                                                    "  JUMP("L-closure-loop-copy-env ");"           NL
+                                                    L-closure-loop-copy-env-end ":"                 NL
+                                                    ))
+                 
+                 (L-closure-loop-copy-stack      (^label-closure-lambda-opt-loop-copy-stack))
+                 (L-closure-loop-copy-stack-end  (^label-closure-lambda-opt-loop-copy-stack-end))
+                 (copy-stack-loop                (string-append
+                                                    "// Copy from stack"                            NL
+                                                    "  MOV(R4, IMM(0));"                            NL
+                                                    "  MOV(R5, IMM(2));"                            NL
+                                                    L-closure-loop-copy-stack ":"                   NL
+                                                    "  CMP(R4, R3);"                                NL
+                                                    "  JUMP_EQ(" L-closure-loop-copy-stack-end ");" NL 
+                                                    "  MOV(INDD(INDD(R2,0),R4),FPARG(R5));"         NL
+                                                    "  INCR(R4);"                                   NL 
+                                                    "  INCR(R5);"                                   NL
+                                                    "  JUMP(" L-closure-loop-copy-stack ");"        NL 
+                                                    L-closure-loop-copy-stack-end ":"               NL  
+                                                    ))
+                                                    
+                  (L-closure-opt-loop-create-list           (^label-closure-lambda-opt-loop-create-list))
+                  (L-closure-opt-loop-create-list-end       (^label-closure-lambda-opt-loop-create-list-end))
+                  (change-opt-to-list             (string-append
+                                                    "//Converting optional Parameters to List"          NL
+                                                    "  MOV(R1, SOB_NIL);"                               NL
+                                                    "  MOV(R4, FPARG(1));"                              NL
+                                                    "  MOV(R5,"(n->s (length (car lambda-exp))) ");"    NL
+                                                    "  INCR(R4);"                                       NL
+                                                    "  INCR(R5);"                                       NL
+                                              ;      "  MOV(R6, R4);"                                    NL 
+                                              ;      "  MOV(R7, R5);"                                    NL 
+                                              ;      "  SUB(R6, R7)"                                     NL 
+                                                    L-closure-opt-loop-create-list ":"                  NL
+                                                    "  CMP(R4, R5);"                                    NL 
+                                                    "  JUMP_EQ(" L-closure-opt-loop-create-list-end ");" NL
+                                                    "  PUSH(R1);"                                       NL 
+                                                    "  PUSH(FPARG(R4));"                                NL 
+                                                    "  CALL(MAKE_SOB_PAIR);"                            NL 
+                                                    "  DROP(2);"                                        NL 
+                                                    "  MOV(R1, R0);"                                    NL 
+                                                    "  DECR(R4);"                                       NL
+                                                    "  JUMP(" L-closure-opt-loop-create-list ");"       NL 
+                                                    L-closure-opt-loop-create-list-end ":"              NL                                                                "  MOV(FPARG(" (n->s (+ (length (car lambda-exp)) 2)) "), R1);" nl 
+
+                                                    )))
+                 (string-append
+                    NL
+                    "// ***CODE-GEN LAMBDA-OPT***"                      NL
+                    "  MOV(R1, FPARG(0));"                              NL 
+                    "  MOV(R3,IMM(" (n->s (+ 1 env-depth)) "));"        NL
+                    "  PUSH(R3);"                                       NL
+                    "  CALL(MALLOC);"                                   NL
+                    "  DROP(1);"                                        NL
+                    "  MOV(R2, R0);"                                    NL
+                    copy-env-loop
+                    "  CMP(IMM(" (n->s env-depth) "), IMM(0));"         NL 
+                    "  JUMP_EQ(" L-closure-loop-copy-stack-end ")"      NL
+                    "  MOV(R3,FPARG(1));"                               NL  
+                    "  PUSH(R3);"                                       NL
+                    "  CALL(MALLOC);"                                   NL
+                    "  DROP(1);"                                        NL
+                    "  MOV(INDD(R2,0), R0);"                            NL    
+                    copy-stack-loop
+                    "// Create Closure"                                 NL
+                    "  PUSH(IMM(3));"                                   NL 
+                    "  CALL(MALLOC);"                                   NL
+                    "  DROP(1);"                                        NL 
+                    "  MOV(INDD(R0,0),IMM(T_CLOSURE));"                 NL
+                    "  MOV(INDD(R0,1),R2);"                             NL
+                    "  MOV(INDD(R0,2),LABEL(" L-opt-closure-body "));"  NL
+                    "  JUMP(" L-opt-closure-exit ");"                   NL NL
+                    "// Closure body"                                   NL
+                    L-opt-closure-body ":"                              NL
+                    "  PUSH(FP);"                                       NL 
+                    "  MOV(FP,SP);"                                     NL 
+                    "  CMP(FPARG(1), IMM("(n->s (length (car lambda-exp)))"));" NL
+                    "  JUMP_LT(" L-opt-error-arg-count ");"                     NL
+                    change-opt-to-list
+                    (code-gen (caddr lambda-exp) (+ 1 env-depth))               NL
+                    "  POP(FP);"                                                NL 
+                    "  RETURN;"                                                 NL 
+                    L-opt-closure-exit ":"                                      NL
+                    )) 
+            ))
+                    
+                                                    
+                        
+
+                                                
 ;-------------------------------------------------------------------------
 ;                       Const table
 ;-------------------------------------------------------------------------
