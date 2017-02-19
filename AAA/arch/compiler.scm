@@ -7,6 +7,7 @@
 (load "pattern-matcher.scm")
 (load "qq.scm")
 (load "lables.scm")
+(load "fvars.scm")
 
 ;;;;;;;;;;;; From tutorial ;;;;;;;;;;;;;;;;;;;;;
 
@@ -2052,12 +2053,29 @@ done))
     (lambda (lst)
         (car lst)))
         
-(define *const-table* (list `(1     ,*void-object*  937610)
-                            `(2     ,'()            722689)
-                            `(3     #t              (741553 1))
-                            `(5     #f              (741553 0)) 
-                            `(7     2               (945311 2))
-                            `(9     3               (945311 3)) 
+(define T_VOID      937610)
+(define T_NIL       722689)
+(define T_BOOL      741553)
+(define T_CHAR      181048)
+(define T_INTEGER   945311)
+(define T_STRING    799345)
+(define T_SYMBOL    368031)
+(define T_PAIR      885397)
+(define T_VECTOR    335728)
+(define T_CLOSURE   276405)
+(define T_FRACTION  451794)
+        
+(define *const-table* (list `(1     ,*void-object*  ,T_VOID)
+                            `(2     ,'()            ,T_NIL)
+                            `(3     #t              (,T_BOOL 1))
+                            `(5     #f              (,T_BOOL 0)) 
+                            `(7     1               (,T_INTEGER 1))
+                            `(9     2               (,T_INTEGER 2))
+                            `(11    3               (,T_INTEGER 3))
+                            `(13    (3)             (,T_PAIR 11 2))
+                            `(16    (2 3)           (,T_PAIR 9 13))
+                            `(19    (1 2 3)         (,T_PAIR 7 16))
+
                         ))
 
 (define base-const-table (string-append 
@@ -2070,16 +2088,27 @@ done))
                                     "  MOV(IND(5), T_BOOL);"    NL
                                     "  MOV(IND(6), IMM(0));"    NL
                                     "  MOV(IND(7), T_INTEGER);" NL
-                                    "  MOV(IND(8), IMM(2));"    NL
+                                    "  MOV(IND(8), IMM(1));"    NL
                                     "  MOV(IND(9), T_INTEGER);" NL
-                                    "  MOV(IND(10), IMM(3));"   NL NL
-                           ))
+                                    "  MOV(IND(10), IMM(2));"   NL 
+                                    "  MOV(IND(11), T_INTEGER);" NL
+                                    "  MOV(IND(12), IMM(3));"   NL
+                                    "  MOV(IND(13), T_PAIR);"   NL
+                                    "  MOV(IND(14), IMM(11));"  NL
+                                    "  MOV(IND(15), IMM(2));"   NL
+                                    "  MOV(IND(16), T_PAIR);"   NL
+                                    "  MOV(IND(17), IMM(9));"   NL
+                                    "  MOV(IND(18), IMM(13));"  NL
+                                    "  MOV(IND(19), T_PAIR);"   NL
+                                    "  MOV(IND(20), IMM(7));"   NL
+                                    "  MOV(IND(21), IMM(16));"  NL NL
+                                ))
                                                                
 (define lookup-const-table 
     (lambda (const const-table)
                 (if (null? const-table) 
                     `(Constant ,const wasn't found in const table)
-                    (if (eq? const (get-const (car const-table)))
+                    (if (equal? const (get-const (car const-table)))
                         (get-addr (car const-table))
                         (lookup-const-table const  (cdr const-table)))
                 )))
@@ -2090,30 +2119,30 @@ done))
 ;                       Fvar table
 ;-------------------------------------------------------------------------   
 
-(define get-fvar
-    (lambda(lst)    
-        (car lst)))
-        
-(define fet-fvar-addr
-    (lambda(lst)
-        (cadr lst)))
-    
-
-(define *fvar-table*  (list `(car   3001)
-                            `(cdr   3002)
-                            `(cons  3003)           
-                            `(+     3004)
-                            `(x     3005)
-                        ))
-                        
-(define lookup-fvar-table
-    (lambda (fvar fvar-table)
-        (if (null? fvar-table) 
-            `(fvar ,fvar wasn't found in fvar table)
-             (if (eq? fvar (get-fvar (car fvar-table)))
-                        (fet-fvar-addr (car fvar-table))
-                        (lookup-fvar-table fvar  (cdr fvar-table))))
-    ))
+;; (define get-fvar
+;;     (lambda(lst)    
+;;         (car lst)))
+;;         
+;; (define fet-fvar-addr
+;;     (lambda(lst)
+;;         (cadr lst)))
+;;     
+;; 
+;; (define *fvar-table*  (list `(car   3001)
+;;                             `(cdr   3002)
+;;                             `(cons  3003)           
+;;                             `(+     3004)
+;;                             `(x     3005)
+;;                         ))
+;;                         
+;; (define lookup-fvar-table
+;;     (lambda (fvar fvar-table)
+;;         (if (null? fvar-table) 
+;;             `(fvar ,fvar wasn't found in fvar table)
+;;              (if (eq? fvar (get-fvar (car fvar-table)))
+;;                         (fet-fvar-addr (car fvar-table))
+;;                         (lookup-fvar-table fvar  (cdr fvar-table))))
+;;     ))
                                                             
 ;-------------------------------------------------------------------------
 ;                       File handling
@@ -2137,6 +2166,7 @@ done))
         (let ((file (open-output-file output)))
             (write_to_file PROLOGUE file)
             (write_to_file base-const-table file) 
+            (write_to_file CODE-GEN-FVARS file) 
             ;;TODO: previous line is only temperory here until we will have const table 
             (map (lambda (exp) (write_to_file exp file)) code)
             (write_to_file EPILOGUE file)
