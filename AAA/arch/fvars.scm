@@ -39,7 +39,17 @@
     ))
 
 
-
+(define MALLOC-CLOSURE
+    (lambda(label) 
+        (string-append
+            "  PUSH(IMM(3));"                                   NL
+            "  CALL(MALLOC);"                                   NL
+            "  DROP(1);"                                        NL
+            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"               NL
+            "  MOV(INDD(R0, 1), IMM(0));"                       NL
+            "  MOV(INDD(R0, 2), LABEL(" label "));"             NL
+            )
+        ))
     
 (define FVAR-car
     (lambda ()
@@ -61,12 +71,7 @@
             "  RETURN;"                                         NL NL
 
             "L_car_closure:"                                    NL
-            "  PUSH(IMM(3));"                                   NL
-            "  CALL(MALLOC);"                                   NL
-            "  DROP(1);"                                        NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"               NL
-            "  MOV(INDD(R0, 1), IMM(0));"                       NL
-            "  MOV(INDD(R0, 2), LABEL(L_car_code));"            NL
+            (MALLOC-CLOSURE "L_car_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'car *fvar-table*)) "), R0);" NL NL
         )
     ))
@@ -93,12 +98,7 @@
             "  RETURN;"                                 NL NL
             
             "L_cdr_closure:"                            NL
-            "  PUSH(IMM(3));"                           NL
-            "  CALL(MALLOC);"                           NL
-            "  DROP(1);"                                NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"       NL
-            "  MOV(INDD(R0, 1), IMM(0));"               NL
-            "  MOV(INDD(R0, 2), LABEL(L_cdr_code));"    NL
+            (MALLOC-CLOSURE "L_cdr_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'cdr *fvar-table*)) "), R0);" NL NL
          
         )
@@ -125,12 +125,7 @@
             "  RETURN;"                               NL NL
             
             "L_cons_closure:"                         NL
-            "  PUSH(IMM(3));"                         NL
-            "  CALL(MALLOC);"                         NL
-            "  DROP(1);"                              NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"     NL
-            "  MOV(INDD(R0, 1), IMM(0));"             NL
-            "  MOV(INDD(R0, 2), LABEL(L_cons_code));" NL
+            (MALLOC-CLOSURE "L_cons_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'cons *fvar-table*)) "), R0);"  NL NL
         )
     ))
@@ -159,12 +154,7 @@
             "  RETURN;"                                     NL NL
             
             "L_boolean_closure:"                            NL
-            "  PUSH(IMM(3));"                               NL
-            "  CALL(MALLOC);"                               NL
-            "  DROP(1);"                                    NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"           NL
-            "  MOV(INDD(R0, 1), IMM(0));"                   NL
-            "  MOV(INDD(R0, 2), LABEL(L_boolean_code));"    NL
+            (MALLOC-CLOSURE "L_boolean_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'boolean? *fvar-table*)) "), R0);" NL NL
            
         )
@@ -194,12 +184,7 @@
             "  RETURN;"                                     NL NL
             
             "L_char_closure:"                               NL
-            "  PUSH(IMM(3));"                               NL
-            "  CALL(MALLOC);"                               NL
-            "  DROP(1);"                                    NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"           NL
-            "  MOV(INDD(R0, 1), IMM(0));"                   NL
-            "  MOV(INDD(R0, 2), LABEL(L_char_code));"       NL
+            (MALLOC-CLOSURE "L_char_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'char? *fvar-table*)) "), R0);" NL NL
            
         )
@@ -229,12 +214,7 @@
             "  RETURN;"                                     NL NL
             
             "L_integer_closure:"                            NL
-            "  PUSH(IMM(3));"                               NL
-            "  CALL(MALLOC);"                               NL
-            "  DROP(1);"                                    NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"           NL
-            "  MOV(INDD(R0, 1), IMM(0));"                   NL
-            "  MOV(INDD(R0, 2), LABEL(L_integer_code));"    NL
+            (MALLOC-CLOSURE "L_integer_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'integer? *fvar-table*)) "), R0);" NL NL
         )
     ))
@@ -263,12 +243,7 @@
             "  RETURN;"                                  NL NL
             
             "L_null_closure:"                            NL
-            "  PUSH(IMM(3));"                            NL
-            "  CALL(MALLOC);"                            NL
-            "  DROP(1);"                                 NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"        NL
-            "  MOV(INDD(R0, 1), IMM(0));"                NL
-            "  MOV(INDD(R0, 2), LABEL(L_null_code));"    NL
+            (MALLOC-CLOSURE "L_null_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'null? *fvar-table*)) "), R0);" NL NL
         )
     ))
@@ -297,12 +272,7 @@
             "  RETURN;"                                  NL NL
             
             "L_pair_closure:"                            NL
-            "  PUSH(IMM(3));"                            NL
-            "  CALL(MALLOC);"                            NL
-            "  DROP(1);"                                 NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"        NL
-            "  MOV(INDD(R0, 1), IMM(0));"                NL
-            "  MOV(INDD(R0, 2), LABEL(L_pair_code));"    NL
+            (MALLOC-CLOSURE "L_pair_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'pair? *fvar-table*)) "), R0);" NL NL
         )
     ))
@@ -331,12 +301,7 @@
             "  RETURN;"                                     NL NL
             
             "L_procedure_closure:"                          NL
-            "  PUSH(IMM(3));"                               NL
-            "  CALL(MALLOC);"                               NL
-            "  DROP(1);"                                    NL
-            "  MOV(INDD(R0, 0), IMM(T_CLOSURE));"           NL
-            "  MOV(INDD(R0, 1), IMM(0));"                   NL
-            "  MOV(INDD(R0, 2), LABEL(L_procedure_code));"    NL
+            (MALLOC-CLOSURE "L_procedure_code")
             "  MOV(IND(" (n->s (lookup-fvar-table 'procedure? *fvar-table*)) "), R0);" NL NL
         )
     ))
