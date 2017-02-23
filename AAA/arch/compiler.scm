@@ -2063,7 +2063,7 @@ done))
 (define T_PAIR      885397)
 (define T_VECTOR    335728)
 (define T_CLOSURE   276405)
-(define T_FRACTION  451794)
+(define T_FRACTION  234097)
         
 (define *const-table* (list `(1     ,*void-object*  ,T_VOID)
                             `(2     ,'()            ,T_NIL)
@@ -2075,7 +2075,9 @@ done))
                             `(13    (3)             (,T_PAIR 11 2))
                             `(16    (2 3)           (,T_PAIR 9 13))
                             `(19    (1 2 3)         (,T_PAIR 7 16))
-
+                            `(22    "abc"           (,T_STRING 3 97 98 99))
+                            `(27    #\c             (,T_CHAR 99))
+                            `(29    100             (,T_INTEGER 100))
                         ))
 
 (define base-const-table (string-append 
@@ -2101,8 +2103,19 @@ done))
                                     "  MOV(IND(18), IMM(13));"  NL
                                     "  MOV(IND(19), T_PAIR);"   NL
                                     "  MOV(IND(20), IMM(7));"   NL
-                                    "  MOV(IND(21), IMM(16));"  NL NL
-                                ))
+                                    "  MOV(IND(21), IMM(16));"  NL 
+                                    "  MOV(IND(22), T_STRING);"  NL 
+                                    "  MOV(IND(23), IMM(3));"  NL 
+                                    "  MOV(IND(24), IMM(97));"  NL 
+                                    "  MOV(IND(25), IMM(98));"  NL 
+                                    "  MOV(IND(26), IMM(99));"  NL 
+                                    "  MOV(IND(27), IMM(T_CHAR));"  NL 
+                                    "  MOV(IND(28), IMM(99));"  NL 
+                                    "  MOV(IND(29), IMM(T_INTEGER));"  NL 
+                                    "  MOV(IND(30), IMM(100));"  NL 
+
+
+                                   ))
                                                                
 (define lookup-const-table 
     (lambda (const const-table)
