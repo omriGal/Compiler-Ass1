@@ -2078,6 +2078,9 @@ done))
                             `(22    "abc"           (,T_STRING 3 97 98 99))
                             `(27    #\c             (,T_CHAR 99))
                             `(29    100             (,T_INTEGER 100))
+                            `(31    4/5             (,T_FRACTION 4 5))
+                            `(34    #(1 2)          (,T_VECTOR 2 7 9))
+                            `(38    0               (,T_INTEGER 0))
                         ))
 
 (define base-const-table (string-append 
@@ -2113,9 +2116,16 @@ done))
                                     "  MOV(IND(28), IMM(99));"  NL 
                                     "  MOV(IND(29), IMM(T_INTEGER));"  NL 
                                     "  MOV(IND(30), IMM(100));"  NL 
-
-
-                                   ))
+                                    "  MOV(IND(31), IMM(T_FRACTION));"  NL 
+                                    "  MOV(IND(32), IMM(4));"  NL 
+                                    "  MOV(IND(33), IMM(5));"  NL 
+                                    "  MOV(IND(34), IMM(T_VECTOR));"  NL 
+                                    "  MOV(IND(35), IMM(2));"  NL 
+                                    "  MOV(IND(36), IMM(7));"  NL 
+                                    "  MOV(IND(37), IMM(9));"  NL 
+                                    "  MOV(IND(38), T_INTEGER);" NL
+                                    "  MOV(IND(39), IMM(0));"   NL    
+                                    ))
                                                                
 (define lookup-const-table 
     (lambda (const const-table)

@@ -47,6 +47,12 @@
                             (integer->char  3026)
                             (set-car!       3027)
                             (set-cdr!       3028)
+                            (numerator      3029)
+                            (denominator    3030)
+                            (number?        3031)
+                            (rational?      3032)
+                            (string-set!    3033)
+                            (vector-set!    3034)
                         ))
                         
 (define lookup-fvar-table
@@ -435,7 +441,7 @@
            
             "  PUSH(INDD(R1, 1));"                                  NL
             "  CALL(MAKE_SOB_INTEGER);"                             NL
-            "  DROP(1);"
+            "  DROP(1);"                                            NL
             
             "  POP(FP);"                                            NL
             "  RETURN;"                                             NL NL
@@ -464,7 +470,7 @@
            
             "  PUSH(INDD(R1, 1));"                                  NL
             "  CALL(MAKE_SOB_INTEGER);"                             NL
-            "  DROP(1);"
+            "  DROP(1);"                                            NL
             
             "  POP(FP);"                                            NL
             "  RETURN;"                                             NL NL
@@ -1092,16 +1098,243 @@
         )
     ))
     
-
-
     
 
 
+(define FVAR-numerator
+    (lambda ()
+        (string-append 
+            "// FVAR numerator"                         NL
+            "  JUMP(L_numerator_closure);"              NL 
+            
+            "L_numerator_code:"                         NL 
+            "  PUSH(FP);"                               NL
+            "  MOV(FP, SP);"                            NL
+
+            "  CMP(FPARG(1), IMM(1));"                  NL
+            "  JUMP_NE(L_closure_error_args_count);"    NL
+            
+            "  MOV(R1, FPARG(2));"                      NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"       NL
+            "  JUMP_EQ(L_numerator_int);"               NL
+            
+            "  CMP(INDD(R1, 0), IMM(T_FRACTION));"      NL
+            "  JUMP_NE(L_numerator_not_num);"           NL
+
+            "L_numerator_int:"
+                        
+            "  PUSH(INDD(R1, 1));"                      NL
+            "  CALL(MAKE_SOB_INTEGER);"                 NL
+            "  DROP(1);"                                NL
+
+            "  POP(FP);"                                NL
+            "  RETURN;"                                 NL NL
+
+            "L_numerator_closure:"                      NL
+            (MALLOC-CLOSURE "L_numerator_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'numerator *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+    
+(define FVAR-denominator
+    (lambda ()
+        (string-append 
+            "// FVAR denominator"                         NL
+            "  JUMP(L_denominator_closure);"              NL 
+            
+            "L_denominator_code:"                         NL 
+            "  PUSH(FP);"                               NL
+            "  MOV(FP, SP);"                            NL
+
+            "  CMP(FPARG(1), IMM(1));"                  NL
+            "  JUMP_NE(L_closure_error_args_count);"    NL
+            
+            "  MOV(R1, FPARG(2));"                      NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"       NL
+            "  JUMP_EQ(L_denominator_int);"             NL
+            
+            "  CMP(INDD(R1, 0), IMM(T_FRACTION));"      NL
+            "  JUMP_NE(L_denominator_not_num);"         NL
+            
+            "  PUSH(INDD(R1, 2));"                      NL
+            "  CALL(MAKE_SOB_INTEGER);"                 NL
+            "  DROP(1);"                                NL
+            "  JUMP(L_numerator_end)"                   NL
+            
+            "L_denominator_int:"
+            "  PUSH(IMM(1));"                           NL
+            "  CALL(MAKE_SOB_INTEGER);"                 NL
+            "  DROP(1);"                                NL
+
+            "L_numerator_end:"                          NL
+            "  POP(FP);"                                NL
+            "  RETURN;"                                 NL NL
+
+            "L_denominator_closure:"                      NL
+            (MALLOC-CLOSURE "L_denominator_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'denominator *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+    
+(define FVAR-number?
+    (lambda ()
+        (string-append
+            "// FVAR number?"                            NL
+            "  JUMP(L_number_closure);"                  NL
+            
+            "L_number_code:"                             NL
+            "  PUSH(FP);"                                NL
+            "  MOV(FP, SP);"                             NL
+            
+            "  CMP(FPARG(1), IMM(1));"                   NL
+            "  JUMP_NE(L_closure_error_args_count);"     NL
+            
+            "  MOV(R1, FPARG(2));"                       NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"        NL
+            "  JUMP_EQ(L_number_true);"                  NL
+            
+            "  CMP(INDD(R1, 0), IMM(T_FRACTION));"       NL
+            "  JUMP_EQ(L_number_true);"                  NL
+
+            "  MOV(R0, IMM(SOB_FALSE));"                 NL
+            "  JUMP(L_number_end);"                      NL
+            
+            "L_number_true:"                             NL
+            "  MOV(R0, IMM(SOB_TRUE));"                  NL
+            
+            "L_number_end:"                              NL
+            "  POP(FP);"                                 NL
+            "  RETURN;"                                  NL NL
+            
+            "L_number_closure:"                            NL
+            (MALLOC-CLOSURE "L_number_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'number? *fvar-table*)) "), R0);" NL NL
+        )
+    ))
 
     
-  
+(define FVAR-rational?
+    (lambda ()
+        (string-append
+            "// FVAR rational?"                          NL
+            "  JUMP(L_rational_closure);"                NL
+            
+            "L_rational_code:"                           NL
+            "  PUSH(FP);"                                NL
+            "  MOV(FP, SP);"                             NL
+            
+            "  CMP(FPARG(1), IMM(1));"                   NL
+            "  JUMP_NE(L_closure_error_args_count);"     NL
+            
+            "  MOV(R1, FPARG(2));"                       NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"        NL
+            "  JUMP_EQ(L_rational_true);"                NL
+            
+            "  CMP(INDD(R1, 0), IMM(T_FRACTION));"       NL
+            "  JUMP_EQ(L_rational_true);"                NL
 
+            "  MOV(R0, IMM(SOB_FALSE));"                 NL
+            "  JUMP(L_rational_end);"                    NL
+            
+            "L_rational_true:"                           NL
+            "  MOV(R0, IMM(SOB_TRUE));"                  NL
+            
+            "L_rational_end:"                            NL
+            "  POP(FP);"                                 NL
+            "  RETURN;"                                  NL NL
+            
+            "L_rational_closure:"                            NL
+            (MALLOC-CLOSURE "L_rational_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'rational? *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+(define FVAR-string-set!
+    (lambda ()
+        (string-append 
+            "// FVAR string-set!"                       NL
+            "  JUMP(L_string_set_closure);"             NL 
+            
+            "L_string_set_code:"                        NL 
+            "  PUSH(FP);"                               NL
+            "  MOV(FP, SP);"                            NL
 
+            "  CMP(FPARG(1), IMM(3));"                  NL
+            "  JUMP_NE(L_closure_error_args_count);"    NL
+            
+            "  MOV(R0,FPARG(2));" 
+            "  CMP(INDD(R0, 0), IMM(T_STRING));"        NL
+            "  JUMP_NE(L_string_set_1_not_string);"     NL
+
+            "  MOV(R1,FPARG(3));"                       NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"       NL
+            "  JUMP_NE(L_string_set_2_not_int);"        NL
+
+            "  MOV(R1,INDD(R1,1));"                     NL
+            "  ADD(R1,2);"                              NL
+
+            "  MOV(R2,FPARG(4));"                       NL
+            "  CMP(INDD(R2, 0), IMM(T_CHAR));"          NL
+            "  JUMP_NE(L_string_set_3_not_char);"       NL
+
+            "  MOV(R2,INDD(R2,1));"                     NL
+
+            "  MOV(INDD(R0,R1),R2);"                    NL
+
+            "  MOV(R0,SOB_VOID);"                       NL
+
+            "  POP(FP);"                                NL
+            "  RETURN;"                                 NL NL
+
+            "L_string_set_closure:"                      NL
+            (MALLOC-CLOSURE "L_string_set_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'string-set! *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+    
+(define FVAR-vector-set!
+    (lambda ()
+        (string-append 
+            "// FVAR vector-set!"                       NL
+            "  JUMP(L_vector_set_closure);"             NL 
+            
+            "L_vector_set_code:"                        NL 
+            "  PUSH(FP);"                               NL
+            "  MOV(FP, SP);"                            NL
+
+            "  CMP(FPARG(1), IMM(3));"                  NL
+            "  JUMP_NE(L_closure_error_args_count);"    NL
+            
+            "  MOV(R0,FPARG(2));" 
+            "  CMP(INDD(R0, 0), IMM(T_VECTOR));"        NL
+            "  JUMP_NE(L_vector_set_1_not_vector);"     NL
+
+            "  MOV(R1,FPARG(3));"                       NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"       NL
+            "  JUMP_NE(L_vector_set_2_not_int);"       NL
+
+            "  MOV(R1,INDD(R1,1));"                     NL
+            "  ADD(R1,2);"                              NL
+
+            "  MOV(R2,FPARG(4));"                       NL
+
+            "  MOV(INDD(R0,R1),R2);"                    NL
+
+         ;   "  MOV(R0,SOB_VOID);"                       NL
+
+            "  POP(FP);"                                NL
+            "  RETURN;"                                 NL NL
+
+            "L_vector_set_closure:"                      NL
+            (MALLOC-CLOSURE "L_vector_set_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'vector-set! *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+    
     
 (define CODE-GEN-FVARS
         (string-append 
@@ -1121,7 +1354,7 @@
             (FVAR-char->integer)
             (FVAR-char?)
             (FVAR-cons)             
-;;             (FVAR-denominator)
+            (FVAR-denominator)
 ;;             (FVAR-eq?)
             (FVAR-integer?)
             (FVAR-integer->char)
@@ -1131,27 +1364,27 @@
 ;            (FVAR-map)             Scheme         
 ;            (FVAR-not)             Scheme
             (FVAR-null?)
-;;             (FVAR-number?)
-;;             (FVAR-numerator)
-             (FVAR-pair?)
-             (FVAR-procedure?)
-;;             (FVAR-rational?)
+            (FVAR-number?)
+            (FVAR-numerator)
+            (FVAR-pair?)
+            (FVAR-procedure?)
+            (FVAR-rational?)
 ;;             (FVAR-remainder)
-             (FVAR-set-car!)
-             (FVAR-set-cdr!)
-             (FVAR-string-length)
-             (FVAR-string-ref)
-;;             (FVAR-string-set!)
+            (FVAR-set-car!)
+            (FVAR-set-cdr!)
+            (FVAR-string-length)
+            (FVAR-string-ref)
+            (FVAR-string-set!)
 ;;             (FVAR-string->symbol)  
-             (FVAR-string?)
+            (FVAR-string?)
 ;;             (FVAR-symbol?)
 ;;             (FVAR-symbol->string)
 ;;             (FVAR-vector)
-             (FVAR-vector-length)
-             (FVAR-vector-ref)
-;;             (FVAR-vector-set!)
-             (FVAR-vector?)
-             (FVAR-zero?)
+            (FVAR-vector-length)
+            (FVAR-vector-ref)
+            (FVAR-vector-set!)
+            (FVAR-vector?)
+            (FVAR-zero?)
             "// *** FVAR CODE- END ***"    NL NL
 
         )
