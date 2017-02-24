@@ -53,7 +53,11 @@
                             (rational?      3032)
                             (string-set!    3033)
                             (vector-set!    3034)
+                            (remainder      3035)
+                            (make-string    3036)
+                            (not            3037)
                         ))
+                        
                         
 (define lookup-fvar-table
     (lambda (fvar fvar-table)
@@ -760,27 +764,57 @@
             "  PUSH(FP);"                   NL
             "  MOV(FP, SP);"                NL
 
-            "  MOV(R1,FPARG(1));"           NL 
-            "  MOV(R2,0);"                  NL
-            "  MOV(R0,0);"                  NL
+            "  MOV(R1, FPARG(1));"          NL 
+            "  MOV(R2, IMM(0));"            NL
+            "  MOV(R0, IMM(0));"            NL
 
-            "  CMP(R1,IMM(0));"             NL
+            "  MOV(R6, IMM(0));"            NL  ; numerator ans
+            "  MOV(R7, IMM(1));"            NL  ; denumerator ans
+            
+            "  CMP(R1, IMM(0));"            NL
             "  JUMP_EQ(L_plus_end);"        NL      
 
             "L_plus_loop:"                  NL
-            "  CMP(R1,R2);"                 NL
+            "  CMP(R1, R2);"                NL
             "  JUMP_EQ(L_plus_end);"        NL
-      
-            "  MOV(R3,FPARG(2+R2));"        NL
-            "  ADD(R0,INDD(R3,1));"         NL
+       
+            "  MOV(R3, FPARG(R2+2));"       NL
+            "  CMP(INDD(R3,0), IMM(T_FRACTION));"   NL
+            "  JUMP_EQ(L_plus_fraction);"           NL
+            
+            "  PUSH(IMM(1));"                NL
+            "  PUSH(INDD(R3,1));"           NL
+            "  CALL(MAKE_SOB_FRACTION);"    NL
+            "  DROP(2);"                    NL
+            "  MOV(R3, R0);"                NL
+            
+            "L_plus_fraction:"              NL
+            "  MOV(R8, INDD(R3,1));"        NL
+            "  MUL(R8, R7);"                NL
+            "  MUL(R6, INDD(R3,2));"        NL
+            "  ADD(R6, R8);"                NL
+            "  MUL(R7, INDD(R3,2));"        NL
+                        
             "  INCR(R2); "                  NL
             "  JUMP(L_plus_loop);"          NL
 
-      
             "L_plus_end:"                   NL
+           
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(GCD);"                  NL
+            "  DROP(IMM(2));"               NL
+            "  MOV(R9, R0);"                NL
+            
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"    NL
+            "  DROP(IMM(2));"               NL
+
+            "  PUSH(R9);"                   NL
             "  PUSH(R0);"                   NL
-            "  CALL(MAKE_SOB_INTEGER);"     NL
-            "  DROP(IMM(1));"               NL
+            "  CALL(FIX_FRACTION);"         NL      ; Returns T_INTEGER or T_FRACTION
+            "  DROP(IMM(2));"               NL
 
             "  POP(FP);"                    NL
             "  RETURN; "                    NL NL
@@ -812,29 +846,86 @@
             "  CMP(R1, IMM(1));"                NL
             "  JUMP_EQ(L_minus_change_sign);"   NL
 
-            "  MOV(R0,INDD(FPARG(2),1));"       NL
-            "  INCR(R2);"                       NL
+            "  MOV(R3, FPARG(2));"                  NL
+            "  CMP(INDD(R3,0), IMM(T_FRACTION));"   NL
+            "  JUMP_EQ(L_minus_before_loop);"       NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(IMM(2));"                       NL
+            "  MOV(R3, R0);"                        NL
+            
+            "L_minus_before_loop:"                  NL
+            "  MOV(R6, INDD(R3,1));"                NL
+            "  MOV(R7, INDD(R3,2));"                NL
 
-            "L_minus_loop:"                     NL
-            "  CMP(R1,R2);"                     NL
-            "  JUMP_EQ(L_minus_end);"           NL
-            "  MOV(R3,FPARG(2+R2));"            NL
-            "  SUB(R0,INDD(R3,1));"             NL 
-            "  INCR(R2);"                       NL
-            "  JUMP(L_minus_loop);"             NL
+            "  INCR(R2);"                           NL
 
-            "L_minus_change_sign:"              NL 
-            "  MOV(R3,0);"                      NL
-            "  SUB(R3,INDD(FPARG(2),1));"       NL
-            "  MOV(R0, R3);"                    NL
+            "L_minus_loop:"                         NL
+            "  CMP(R1,R2);"                         NL
+            "  JUMP_EQ(L_minus_end);"               NL
+           
+            "  MOV(R3, FPARG(R2+2));"               NL
+            "  CMP(INDD(R3,0), IMM(T_FRACTION));"   NL
+            "  JUMP_EQ(L_minus_fraction);"          NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(2);"                            NL
+            "  MOV(R3, R0);"                        NL
+            
+            "L_minus_fraction:"                     NL
+            "  MOV(R8, INDD(R3,1));"                NL
+            "  MUL(R8, R7);"                        NL
+            "  MUL(R6, INDD(R3,2));"                NL
+            "  SUB(R6, R8);"                        NL
+            "  MUL(R7, INDD(R3,2));"                NL           
+                        
+            "  INCR(R2);"                           NL
+            "  JUMP(L_minus_loop);"                 NL
 
-            "L_minus_end:"                      NL
-            "  PUSH(R0);"                       NL
-            "  CALL(MAKE_SOB_INTEGER);"         NL
-            "  DROP(IMM(1));"                   NL
+            
+            "L_minus_change_sign:"                  NL 
+            
+            "  MOV(R3, FPARG(2));"                  NL
+            "  CMP(INDD(R3,0),IMM(T_FRACTION));"            NL
+            "  JUMP_EQ(L_minus_change_sign_fraction);"      NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(IMM(2));"                       NL
+            "  MOV(R3, R0);"                        NL
 
-            "  POP(FP);"                        NL
-            "  RETURN; "                         NL NL
+            
+            "L_minus_change_sign_fraction:" NL
+            "  MOV(R6, INDD(R3,1));"        NL
+            "  MUL(R6, IMM(-1));"           NL
+            "  MOV(R7, INDD(R3,2));"        NL
+
+            
+            "L_minus_end:"                  NL
+            
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(GCD);"                  NL
+            "  DROP(IMM(2));"               NL
+            "  MOV(R9, R0);"                NL
+            
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"    NL
+            "  DROP(IMM(2));"               NL
+
+            "  PUSH(R9);"                   NL
+            "  PUSH(R0);"                   NL
+            "  CALL(FIX_FRACTION);"         NL      ; Returns T_INTEGER or T_FRACTION
+            "  DROP(IMM(2));"               NL
+            
+            "  POP(FP);"                    NL
+            "  RETURN; "                    NL NL
 
             "L_minus_closure:"               NL
             (MALLOC-CLOSURE "L_minus_code")
@@ -857,23 +948,49 @@
             "  MOV(R2,0);"                  NL
             "  MOV(R0,1);"                  NL
 
+            "  MOV(R6, IMM(1));"            NL  ; numerator ans
+            "  MOV(R7, IMM(1));"            NL  ; denumerator ans
+            
             "  CMP(R1,IMM(0));"             NL
             "  JUMP_EQ(L_mul_end);"         NL      
 
             "L_mul_loop:"                   NL
             "  CMP(R1,R2);"                 NL
             "  JUMP_EQ(L_mul_end);"         NL
-      
-            "  MOV(R3,FPARG(2+R2));"        NL
-            "  MUL(R0,INDD(R3,1));"         NL
+
+            "  MOV(R3, FPARG(R2+2));"               NL
+            "  CMP(INDD(R3,0), IMM(T_FRACTION));"   NL
+            "  JUMP_EQ(L_mul_fraction);"            NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(2);"                            NL
+            "  MOV(R3, R0);"                        NL
+            
+            "L_mul_fraction:"                       NL
+            "  MUL(R6, INDD(R3,1));"                NL
+            "  MUL(R7, INDD(R3,2));"                NL
+    
             "  INCR(R2); "                  NL
             "  JUMP(L_mul_loop);"           NL
 
-      
             "L_mul_end:"                    NL
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(GCD);"                  NL
+            "  DROP(IMM(2));"               NL
+            "  MOV(R9, R0);"                NL
+            
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"    NL
+            "  DROP(IMM(2));"               NL
+
+            "  PUSH(R9);"                   NL
             "  PUSH(R0);"                   NL
-            "  CALL(MAKE_SOB_INTEGER);"     NL
-            "  DROP(IMM(1));"               NL
+            "  CALL(FIX_FRACTION);"         NL      ; Returns T_INTEGER or T_FRACTION
+            "  DROP(IMM(2));"               NL
 
             "  POP(FP);"                    NL
             "  RETURN; "                    NL NL
@@ -904,29 +1021,118 @@
 
             "  CMP(R1,IMM(1));"                 NL
             "  JUMP_EQ(L_div_1_arg);"           NL
+;
+            "  MOV(R3, FPARG(2));"                  NL
+            "  CMP(INDD(R3,0), IMM(T_FRACTION));"   NL
+            "  JUMP_EQ(L_div_before_loop);"         NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(IMM(2));"                       NL
+            "  MOV(R3, R0);"                        NL
+            
+            "L_div_before_loop:"                    NL
+            "  MOV(R6, INDD(R3,1));"                NL
+            "  MOV(R7, INDD(R3,2));"                NL
+            
+            "  INCR(R2);"                           NL          
+            
+            ;*******************************************
+            
+            "L_div_loop:"                           NL
+            "  CMP(R1,R2);"                         NL
+            "  JUMP_EQ(L_div_end);"                 NL
+            
+            "  MOV(R3, FPARG(R2+2));"               NL
+            "  CMP(INDD(R3,0), IMM(T_FRACTION));"   NL
+            "  JUMP_EQ(L_div_fraction);"            NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(2);"                            NL
+            "  MOV(R3, R0);"                        NL
+            
+            "L_div_fraction:"                       NL
 
-            "  MOV(R0,INDD(FPARG(2),1));"       NL
-            "  INCR(R2);"                       NL
+            "  CMP(IMM(0),INDD(R3,1));"             NL
+            "  JUMP_EQ(L_division_by_zero);"        NL
+            
+            "  MUL(R6,INDD(R3,2));"                 NL
+            "  MUL(R7,INDD(R3,1));"                 NL
 
-            "L_div_loop:"                       NL
-            "  CMP(R1,R2);"                     NL
-            "  JUMP_EQ(L_div_end);"             NL
-            "  CMP(IMM(0),INDD(FPARG(2+R2),1));"    NL
-            "  JUMP_EQ(L_division_by_zero);"    NL
-            "  DIV(R0,INDD(FPARG(2+R2),1));"    NL
-            "  INCR(R2);"                       NL
-            "  JUMP(L_div_loop);"               NL
+            "  PUSH(R7);"                           NL
+            "  PUSH(R6);"                           NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(IMM(2));"                       NL
 
-            "L_div_1_arg:"                      NL
-            "  MOV(R0,IMM(0));"                 NL
+            
+            "  MOV(R3, R0);"                        NL
+            
+            "  PUSH(R1);"                           NL
+            "  PUSH(R2);"                           NL
 
-            "L_div_end:"                        NL
-            "  PUSH(R0);"                       NL
-            "  CALL(MAKE_SOB_INTEGER);"         NL
-            "  DROP(IMM(1));"                   NL
+            "  PUSH(R3);"                           NL
+            "  CALL(FIX_DIV_FRACTION);"             NL
+            "  DROP(IMM(1));"                       NL
+            
+            "  POP(R2);"                            NL
+            "  POP(R1);"                            NL
 
-            "  POP(FP);"                        NL
-            "  RETURN; "                        NL NL
+            "  MOV(R6, INDD(R0,1));"                NL
+            "  MOV(R7, INDD(R0,2));"                NL
+
+            "  INCR(R2);"                           NL
+            "  JUMP(L_div_loop);"                   NL
+
+            "L_div_1_arg:"                          NL 
+            
+            "  MOV(R3, FPARG(2));"                  NL
+            "  CMP(INDD(R3,0),IMM(T_FRACTION));"    NL
+            "  JUMP_EQ(L_div_1_arg_fraction);"      NL
+            
+            "  PUSH(IMM(1));"                       NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(IMM(2));"                       NL
+            "  MOV(R3, R0);"                        NL
+
+            
+            "L_div_1_arg_fraction:"                 NL
+            "  PUSH(INDD(R3,1));"                   NL
+            "  PUSH(INDD(R3,2));"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"            NL
+            "  DROP(IMM(2));"                       NL
+            "  MOV(R3, R0);"                        NL
+            
+            "  PUSH(R3);"                           NL
+            "  CALL(FIX_DIV_FRACTION);"             NL
+            "  DROP(IMM(1));"                       NL
+            
+            "  MOV(R6, INDD(R0,1));"                NL
+            "  MOV(R7, INDD(R0,2));"                NL
+           
+            
+            "L_div_end:"                    NL
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(GCD);"                  NL
+            "  DROP(IMM(2));"               NL
+            "  MOV(R9, R0);"                NL
+            
+            "  PUSH(R7);"                   NL
+            "  PUSH(R6);"                   NL
+            "  CALL(MAKE_SOB_FRACTION);"    NL
+            "  DROP(IMM(2));"               NL
+
+            "  PUSH(R9);"                   NL
+            "  PUSH(R0);"                   NL
+            "  CALL(FIX_FRACTION);"         NL      ; Returns T_INTEGER or T_FRACTION
+            "  DROP(IMM(2));"               NL
+            
+            "  POP(FP);"                    NL
+            "  RETURN; "                    NL NL
 
             "L_div_closure:"               NL
             (MALLOC-CLOSURE "L_div_code")
@@ -1323,7 +1529,7 @@
 
             "  MOV(INDD(R0,R1),R2);"                    NL
 
-         ;   "  MOV(R0,SOB_VOID);"                       NL
+            "  MOV(R0,SOB_VOID);"                       NL
 
             "  POP(FP);"                                NL
             "  RETURN;"                                 NL NL
@@ -1335,11 +1541,139 @@
     ))
     
     
+(define FVAR-remainder
+    (lambda ()
+        (string-append 
+            "// FVAR remainder"                       NL
+            "  JUMP(L_remainder_closure);"             NL 
+            
+            "L_remainder_code:"                        NL 
+            "  PUSH(FP);"                               NL
+            "  MOV(FP, SP);"                            NL
+
+            "  CMP(FPARG(1), IMM(2));"                  NL
+            "  JUMP_NE(L_closure_error_args_count);"    NL
+            
+            "  MOV(R0,FPARG(2));" 
+            "  CMP(INDD(R0, 0), IMM(T_INTEGER));"       NL
+            "  JUMP_NE(L_remainder_not_integer);"       NL
+
+            "  MOV(R1,FPARG(3));"                       NL
+            "  CMP(INDD(R1, 0), IMM(T_INTEGER));"       NL
+            "  JUMP_NE(L_remainder_not_integer);"       NL
+
+            "  MOV(R0, INDD(R0,1));"                    NL
+            "  MOV(R1, INDD(R1,1));"                    NL
+
+            "  REM(R0, R1);"                            NL
+            
+            "  PUSH(R0);"                               NL
+            "  CALL(MAKE_SOB_INTEGER);"                 NL
+            "  DROP(1);"                                NL
+
+            "  POP(FP);"                                NL
+            "  RETURN;"                                 NL NL
+
+            "L_remainder_closure:"                      NL
+            (MALLOC-CLOSURE "L_remainder_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'remainder *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+    
+(define FVAR-make-string
+    (lambda ()
+        (string-append 
+            "// FVAR make-string"                       NL
+            "  JUMP(L_make_string_closure);"            NL 
+            
+            "L_make_string_code:"                       NL 
+            "  PUSH(FP);"                               NL
+            "  MOV(FP, SP);"                            NL
+
+            "  CMP(FPARG(1) ,IMM(1));"
+            "  JUMP_LT(L_closure_error_args_count);"    NL
+
+            "  MOV(R1, 0);"                             NL
+            "  MOV(R2, FPARG(1));"                      NL
+            "  CMP(R2, IMM(1));"                        NL
+            "  JUMP_EQ(L_make_string_malloc);"          NL
+            
+            "  MOV(R1,FPARG(3));"                       NL
+            "  MOV(R1,INDD(R1,1));"                     NL
+
+            "L_make_string_malloc:"                     NL
+            "  MOV(R2,FPARG(2));"                       NL
+            "  MOV(R2,INDD(R2,1));"                     NL
+            "  MOV(R3,R2);"                             NL
+            "  ADD(R3,2);"                              NL
+            
+            "  PUSH(R3);"                               NL
+            "  CALL(MALLOC);"                           NL
+            "  DROP(1);"                                NL
+
+            "  MOV(IND(R0),T_STRING);"                  NL
+            "  MOV(INDD(R0,1),R2);"                     NL
+            "  MOV(R3,2);"                              NL
+
+            "L_make_string_loop:"                       NL
+            "  CMP(R2,0);"                              NL
+            "  JUMP_EQ(L_make_string_end);"             NL
+            "  MOV(INDD(R0,R3),R1);"                    NL
+            "  INCR(R3);"                               NL
+            "  DECR(R2);"                               NL
+            "  JUMP(L_make_string_loop);"               NL
+
+            "  L_make_string_end:"
+            "  POP(FP);"                                NL
+            "  RETURN;"                                 NL NL
+
+            "L_make_string_closure:"                    NL
+            (MALLOC-CLOSURE "L_make_string_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'make-string *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+
+(define FVAR-not
+    (lambda ()
+        (string-append
+            "// FVAR not"                                   NL
+            "  JUMP(L_not_closure);"                        NL
+            "L_not_code:"                                   NL
+            
+            "  PUSH(FP);"                                   NL
+            "  MOV(FP, SP);"                                NL
+            
+            "  CMP(FPARG(1), IMM(1));"                      NL
+            "  JUMP_NE(L_closure_error_args_count);"        NL
+            
+            "  MOV(R1, FPARG(2));"                          NL
+            "  CMP(R1, IMM(SOB_FALSE));"                    NL
+            "  JUMP_EQ(L_not_true);"                        NL
+            
+            "  MOV(R0, IMM(SOB_FALSE));"                    NL
+            "  JUMP(L_not_end);"                            NL
+            
+            "L_not_true:"                                   NL
+            "  MOV(R0, IMM(SOB_TRUE));"                     NL
+            "L_not_end:"                                    NL
+            "  POP(FP);"                                    NL
+            "  RETURN;"                                     NL NL
+            
+            "L_not_closure:"                                NL
+            (MALLOC-CLOSURE "L_not_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'not *fvar-table*)) "), R0);" NL NL
+           
+        )
+    ))
+    
+    
     
 (define CODE-GEN-FVARS
         (string-append 
             "// *** FVAR CODE ***"    NL
-;;            (FVAR-append)          Scheme
+;;            (FVAR-append)          
 ;;             (FVAR-apply)
             (FVAR-<)
             (FVAR-=)
@@ -1358,18 +1692,18 @@
 ;;             (FVAR-eq?)
             (FVAR-integer?)
             (FVAR-integer->char)
-;;            (FVAR-list)            Scheme
-;;             (FVAR-make-string)
+;;            (FVAR-list)            
+            (FVAR-make-string)
              (FVAR-make-vector)
-;            (FVAR-map)             Scheme         
-;            (FVAR-not)             Scheme
+;            (FVAR-map)                      
+            (FVAR-not)             
             (FVAR-null?)
             (FVAR-number?)
             (FVAR-numerator)
             (FVAR-pair?)
             (FVAR-procedure?)
             (FVAR-rational?)
-;;             (FVAR-remainder)
+            (FVAR-remainder)
             (FVAR-set-car!)
             (FVAR-set-cdr!)
             (FVAR-string-length)
