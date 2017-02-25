@@ -129,12 +129,12 @@
   (lambda (s)
     (let ((str (symbol->string s)))
       (begin (set-const! str)
-             `(,(get-post-addr) ,s (|T_SYMBOL| ,(mem str)))))))
+             `(,(get-post-addr) ,s (|T_SYMBOL| ,(get-mem-addr str)))))))
 
 (define add-string
   (lambda (str)
     (let ((lst (string->list str)))
-      `(,(get-post-addr) ,str (|T_STRING| ,(string-length str) ,(map char->integer lst))))))
+      `(,(get-post-addr) ,str (|T_STRING| ,(string-length str) ,@(map char->integer lst))))))
 
 (define add-list-iter
   (lambda (lst)

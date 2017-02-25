@@ -2055,7 +2055,7 @@ done))
     (lambda ()
         (string-append
             "// *** CONST TABLE ***"                        NL
-            "  ADD(IND(0),IMM(" (n->s stack-memory) ");"    NL
+            "  ADD(IND(0),IMM(" (n->s stack-memory) "));"    NL
         )))
         
 (define POST-CONST-TABLE
