@@ -7,6 +7,7 @@
 (load "pattern-matcher.scm")
 (load "qq.scm")
 (load "lables.scm")
+(load "consts.scm")
 (load "fvars.scm")
 
 ;;;;;;;;;;;; From tutorial ;;;;;;;;;;;;;;;;;;;;;
@@ -1403,6 +1404,10 @@ done))
 ;-------------------------------------------------------------------------
 ;                       FINAL PROJECT
 ;-------------------------------------------------------------------------
+
+(define stack-memory 0)
+
+
 ;-------------------------------------------------------------------------
 
 ;-------------------------------------------------------------------------
@@ -2045,127 +2050,25 @@ done))
 
 (define NL (list->string (list #\newline)))
 
-(define get-const
-    (lambda (lst)
-        (cadr lst)))
-        
-(define get-addr
-    (lambda (lst)
-        (car lst)))
-        
-(define T_VOID      937610)
-(define T_NIL       722689)
-(define T_BOOL      741553)
-(define T_CHAR      181048)
-(define T_INTEGER   945311)
-(define T_STRING    799345)
-(define T_SYMBOL    368031)
-(define T_PAIR      885397)
-(define T_VECTOR    335728)
-(define T_CLOSURE   276405)
-(define T_FRACTION  234097)
-        
-(define *const-table* (list `(1     ,*void-object*  ,T_VOID)
-                            `(2     ,'()            ,T_NIL)
-                            `(3     #t              (,T_BOOL 1))
-                            `(5     #f              (,T_BOOL 0)) 
-                            `(7     1               (,T_INTEGER 1))
-                            `(9     2               (,T_INTEGER 2))
-                            `(11    3               (,T_INTEGER 3))
-                            `(13    (3)             (,T_PAIR 11 2))
-                            `(16    (2 3)           (,T_PAIR 9 13))
-                            `(19    (1 2 3)         (,T_PAIR 7 16))
-                            `(22    "abc"           (,T_STRING 3 97 98 99))
-                            `(27    #\c             (,T_CHAR 99))
-                            `(29    100             (,T_INTEGER 100))
-                            `(31    4/5             (,T_FRACTION 4 5))
-                            `(34    #(1 2)          (,T_VECTOR 2 7 9))
-                            `(38    0               (,T_INTEGER 0))
-                        ))
 
-(define base-const-table (string-append 
-                                    "// *** CONST TABLE ***"    NL
-                                    "  ADD(IND(0), IMM(1000));" NL
-                                    "  MOV(IND(1), T_VOID);"    NL
-                                    "  MOV(IND(2), T_NIL);"     NL
-                                    "  MOV(IND(3), T_BOOL);"    NL
-                                    "  MOV(IND(4), IMM(1));"    NL
-                                    "  MOV(IND(5), T_BOOL);"    NL
-                                    "  MOV(IND(6), IMM(0));"    NL
-                                    "  MOV(IND(7), T_INTEGER);" NL
-                                    "  MOV(IND(8), IMM(1));"    NL
-                                    "  MOV(IND(9), T_INTEGER);" NL
-                                    "  MOV(IND(10), IMM(2));"   NL 
-                                    "  MOV(IND(11), T_INTEGER);" NL
-                                    "  MOV(IND(12), IMM(3));"   NL
-                                    "  MOV(IND(13), T_PAIR);"   NL
-                                    "  MOV(IND(14), IMM(11));"  NL
-                                    "  MOV(IND(15), IMM(2));"   NL
-                                    "  MOV(IND(16), T_PAIR);"   NL
-                                    "  MOV(IND(17), IMM(9));"   NL
-                                    "  MOV(IND(18), IMM(13));"  NL
-                                    "  MOV(IND(19), T_PAIR);"   NL
-                                    "  MOV(IND(20), IMM(7));"   NL
-                                    "  MOV(IND(21), IMM(16));"  NL 
-                                    "  MOV(IND(22), T_STRING);"  NL 
-                                    "  MOV(IND(23), IMM(3));"  NL 
-                                    "  MOV(IND(24), IMM(97));"  NL 
-                                    "  MOV(IND(25), IMM(98));"  NL 
-                                    "  MOV(IND(26), IMM(99));"  NL 
-                                    "  MOV(IND(27), IMM(T_CHAR));"  NL 
-                                    "  MOV(IND(28), IMM(99));"  NL 
-                                    "  MOV(IND(29), IMM(T_INTEGER));"  NL 
-                                    "  MOV(IND(30), IMM(100));"  NL 
-                                    "  MOV(IND(31), IMM(T_FRACTION));"  NL 
-                                    "  MOV(IND(32), IMM(4));"  NL 
-                                    "  MOV(IND(33), IMM(5));"  NL 
-                                    "  MOV(IND(34), IMM(T_VECTOR));"  NL 
-                                    "  MOV(IND(35), IMM(2));"  NL 
-                                    "  MOV(IND(36), IMM(7));"  NL 
-                                    "  MOV(IND(37), IMM(9));"  NL 
-                                    "  MOV(IND(38), T_INTEGER);" NL
-                                    "  MOV(IND(39), IMM(0));"   NL    
-                                    ))
-                                                               
-(define lookup-const-table 
-    (lambda (const const-table)
-                (if (null? const-table) 
-                    `(Constant ,const wasn't found in const table)
-                    (if (equal? const (get-const (car const-table)))
-                        (get-addr (car const-table))
-                        (lookup-const-table const  (cdr const-table)))
-                )))
-
+(define PRE-CONST-TABLE
+    (lambda ()
+        (string-append
+            "// *** CONST TABLE ***"                        NL
+            "  ADD(IND(0),IMM(" (n->s stack-memory) ");"    NL
+        )))
+        
+(define POST-CONST-TABLE
+        (string-append
+            "//*** CONST TABLE END ***"  NL NL
+        )) 
                 
-                
+      
 ;-------------------------------------------------------------------------
 ;                       Fvar table
 ;-------------------------------------------------------------------------   
 
-;; (define get-fvar
-;;     (lambda(lst)    
-;;         (car lst)))
-;;         
-;; (define fet-fvar-addr
-;;     (lambda(lst)
-;;         (cadr lst)))
-;;     
-;; 
-;; (define *fvar-table*  (list `(car   3001)
-;;                             `(cdr   3002)
-;;                             `(cons  3003)           
-;;                             `(+     3004)
-;;                             `(x     3005)
-;;                         ))
-;;                         
-;; (define lookup-fvar-table
-;;     (lambda (fvar fvar-table)
-;;         (if (null? fvar-table) 
-;;             `(fvar ,fvar wasn't found in fvar table)
-;;              (if (eq? fvar (get-fvar (car fvar-table)))
-;;                         (fet-fvar-addr (car fvar-table))
-;;                         (lookup-fvar-table fvar  (cdr fvar-table))))
-;;     ))
+
                                                             
 ;-------------------------------------------------------------------------
 ;                       File handling
@@ -2185,17 +2088,19 @@ done))
 ))
 
 (define create_file
-    (lambda(output code)
+    (lambda(output code)        
         (let ((file (open-output-file output)))
             (write_to_file PROLOGUE file)
-            (write_to_file base-const-table file) 
-            (write_to_file CODE-GEN-FVARS file) 
-            ;;TODO: previous line is only temperory here until we will have const table 
+            
+            (write_to_file (PRE-CONST-TABLE) file)
+            (write_to_file (generate-const-code *const-table*) file)
+            (write_to_file POST-CONST-TABLE file)
+            (write_to_file (CODE-GEN-FVARS) file) 
             (map (lambda (exp) (write_to_file exp file)) code)
             (write_to_file EPILOGUE file)
             (close-output-port file))
     ))
-	
+    
             
 (define write_to_file
     (lambda(source target)
@@ -2244,17 +2149,19 @@ done))
 ;                       Main
 ;-------------------------------------------------------------------------
 
+
 (define compile-scheme-file
     (lambda (inputFile outputFile)
     
         (let* ( (stream      (read_file inputFile))
                 (tokens      (scanner stream))
                 (ast         (semantic-analyzer tokens))
-        ;       (const-table (build-const-table ast))
-        ;       (fvar-table  (build-fvar-table ast))
+                (const-table (generate-const-table ast))
+                (fvar-table  (generate-fvar-table ast const-table))
                 (code-input  (iter-code-gen ast))) 
-                
-             (create_file outputFile code-input)
+          
+          (set! stack-memory (+ fvar-table 1))
+          (create_file outputFile code-input)
 
 ;              (create_file outputFile  (code-gen-primitive) code-input )
     )))

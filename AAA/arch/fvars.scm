@@ -18,47 +18,89 @@
         (cadr lst)))
     
 
-(define *fvar-table*  `(     
-                            (car            3001)
-                            (cdr            3002)
-                            (cons           3003)           
-                            (boolean?       3004)
-                            (char?          3005)
-                            (integer?       3006)
-                            (null?          3007)
-                            (pair?          3008)
-                            (procedure?     3009)
-                            (string?        3010)
-                            (vector?        3011)
-                            (zero?          3012)
-                            (string-length  3013)
-                            (vector-length  3014)
-                            (string-ref     3015)
-                            (vector-ref     3016)
-                            (make-vector    3017)
-                            (<              3018)
-                            (=              3019)
-                            (>              3020)
-                            (+              3021)
-                            (/              3022)
-                            (-              3023)
-                            (*              3024)
-                            (char->integer  3025)
-                            (integer->char  3026)
-                            (set-car!       3027)
-                            (set-cdr!       3028)
-                            (numerator      3029)
-                            (denominator    3030)
-                            (number?        3031)
-                            (rational?      3032)
-                            (string-set!    3033)
-                            (vector-set!    3034)
-                            (remainder      3035)
-                            (make-string    3036)
-                            (not            3037)
+(define *base-fvar-table* `(     
+                 ;           (append         0)
+                 ;           (apply          0)
+                            (<              0)
+                            (=              0)
+                            (>              0)
+                            (+              0)
+                            (/              0)
+                            (*              0)
+                            (-              0)
+                            (boolean?       0)
+                            (car            0)
+                            (cdr            0)
+                            (char->integer  0)
+                            (char?          0)
+                            (cons           0)           
+                            (denominator    0)
+                    ;        (eq?               0)
+                            (integer?       0)
+                            (integer->char  0)
+                    ;        (list              0)
+                            (make-string    0)
+                            (make-vector    0)
+                     ;       (map               0)
+                            (not            0)
+                            (null?          0)
+                            (number?        0)
+                            (numerator      0)
+                            (pair?          0)
+                            (procedure?     0)
+                            (rational?      0)
+                            (remainder      0)
+                            (set-car!       0)
+                            (set-cdr!       0)
+                            (string-length  0)
+                            (string-ref     0)
+                            (string-set!    0)
+                     ;       (string->symbol    0)
+                            (string?        0)
+                     ;       (symbol?           0)
+                     ;       (symbol->string    0)
+                     ;       (vector            0)
+                            (vector-length  0)
+                            (vector-ref     0)
+                            (vector-set!    0)
+                            (vector?        0)
+                            (zero?          0)
+                            
                         ))
+
+(define *fvar-table* '())                           
                         
-                        
+(define generate-fvar-table 
+  (lambda (ast addr)
+    (set! *fvar-table* *base-fvar-table*)
+    (for-each add-fvar ast)
+    (give-fvar-addr *fvar-table* addr)))
+    
+    
+(define add-fvar
+  (lambda (exp)
+    (if (list? exp)
+        (cond ((is-fvar? exp) (set-fvar! (cadr exp)))
+              ((has-list? exp) (for-each add-fvar exp))))))
+
+(define is-fvar?
+  (lambda (exp)
+    (and (not (null? exp))
+         (equal? (car exp) 'fvar))))
+
+(define set-fvar!
+  (lambda (fvar)
+    (if (not (member fvar (map car *fvar-table*)))
+        (set! *fvar-table* (append *fvar-table* `((,fvar 0)))))))
+    
+(define give-fvar-addr
+    (lambda(fvar-table addr)
+        (if (null? fvar-table) 
+            addr
+            (begin
+                (set-car! (cdar fvar-table) addr)
+                (give-fvar-addr (cdr fvar-table) (+ 1 addr))))))
+                
 (define lookup-fvar-table
     (lambda (fvar fvar-table)
         (if (null? fvar-table) 
@@ -714,31 +756,48 @@
             "  MOV(R3, FPARG(2));"              NL
             "  INCR(R2);"                       NL
             "  CMP(INDD(R3,0), IMM(T_INTEGER));" NL 
-            "  MOV(R3, INDD(R3,1));"            NL
+            
             "  JUMP_EQ(L_equal_int_loop);"      NL
             
-            ;ADD HERE IF FRACTION
             
-            
-            "L_equal_int_loop:"                 NL
-            "  CMP(R2,R1);"                     NL
+            "L_equal_fraction_loop:"            NL
+            "  CMP(R2, R1);"                    NL
             "  JUMP_EQ(L_equal_end);"           NL
       
             "  MOV(R4, FPARG(R2+2));"
-            "  CMP(INDD(R4,0), IMM(T_INTEGER));"     NL
-            "  JUMP_NE(L_equal_false);"         NL
-            "  MOV(R4, INDD(R4,1));"            NL
-            "  CMP(R3, R4);"                     NL
-            "  MOV(R3, R4);"                     NL
-            "  INCR(R2);"                       NL
-            "  JUMP_EQ(L_equal_int_loop);"      NL
-      
-            "L_equal_false:"                    NL
-            "  MOV(R0,SOB_FALSE);"              NL
+            "  CMP(INDD(R4,0), IMM(T_FRACTION));"   NL
+            "  JUMP_NE(L_equal_false);"             NL
+            
+            "  CMP(INDD(R3,1), INDD(R4,1));"        NL
+            "  JUMP_NE(L_equal_false);"             NL
 
-            "L_equal_end:"                      NL
-            "  POP(FP);"                        NL
-            "  RETURN; "                        NL NL
+            "  CMP(INDD(R3,2), INDD(R4,2));"        NL
+            "  JUMP_NE(L_equal_false);"             NL
+
+            "  MOV(R3, R4);"                        NL
+            "  INCR(R2);"                           NL
+            "  JUMP_EQ(L_equal_fraction_loop);"     NL
+            
+            
+            
+            "L_equal_int_loop:"                 NL
+            "  CMP(R2, R1);"                    NL
+            "  JUMP_EQ(L_equal_end);"           NL
+      
+            "  MOV(R4, FPARG(R2+2));"
+            "  CMP(INDD(R4,0), IMM(T_INTEGER));"    NL
+            "  JUMP_NE(L_equal_false);"             NL
+            "  CMP(INDD(R3,1), INDD(R4,1));"        NL
+            "  MOV(R3, R4);"                        NL
+            "  INCR(R2);"                           NL
+            "  JUMP_EQ(L_equal_int_loop);"          NL
+      
+            "L_equal_false:"                        NL
+            "  MOV(R0,SOB_FALSE);"                  NL
+
+            "L_equal_end:"                          NL
+            "  POP(FP);"                            NL
+            "  RETURN; "                            NL NL
         
             "L_equal_closure:"             NL
             (MALLOC-CLOSURE "L_equal_code")
@@ -1743,6 +1802,7 @@
     
     
 (define CODE-GEN-FVARS
+    (lambda() 
         (string-append 
             "// *** FVAR CODE ***"    NL
 ;;            (FVAR-append)          
@@ -1794,7 +1854,7 @@
             "// *** FVAR CODE- END ***"    NL NL
 
         )
-    )
+    ))
     
     
 
