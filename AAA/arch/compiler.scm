@@ -2087,6 +2087,29 @@ done))
                     (iter-chars)))
 ))
 
+(define read-special
+    (lambda (input-port output)
+        (let loop ((x (read-char input-port)))
+        (if (not (eof-object? x))
+            (begin
+                (display x output)
+                (loop (read-char input-port)))))))
+
+
+(define prepare_file
+    (lambda (input)
+        (begin
+        (delete-file "Stream.scm")
+        (let ((file (open-output-file "Stream.scm")))
+                (read-special (open-input-file "scheme-fvars.scm") file) 
+                (read-special (open-input-file input) file)
+                (close-output-port file) 
+                )
+            )
+            ))
+            
+    
+
 (define create_file
     (lambda(output code)        
         (let ((file (open-output-file output)))
@@ -2153,7 +2176,9 @@ done))
 (define compile-scheme-file
     (lambda (inputFile outputFile)
     
-        (let* ( (stream      (read_file inputFile))
+        (let* ( ;(prepare     (prepare_file inputFile))
+                ;(stream      (read_file "Stream.scm"))
+                (stream      (read_file inputFile))
                 (tokens      (scanner stream))
                 (ast         (semantic-analyzer tokens))
                 (const-table (generate-const-table ast))
@@ -2168,6 +2193,7 @@ done))
     
 (define sofi
     (lambda()
+        (delete-file "sofi.c")
         (compile-scheme-file "test.scm" "sofi.c")))
         
 (define sa

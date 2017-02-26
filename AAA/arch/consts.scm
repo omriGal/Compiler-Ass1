@@ -25,8 +25,8 @@
 (define *base-const-table* `( 
                                 (1 ,(void) (|T_VOID|))
                                 (2 ,(list) (|T_NIL|))
-                                (3 #f (|T_BOOL| 0))
-                                (5 #t (|T_BOOL| 1))) )
+                                (3 #t (|T_BOOL| 1))
+                                (5 #f (|T_BOOL| 0))) )
 
 (define *const-table* '())
                                 

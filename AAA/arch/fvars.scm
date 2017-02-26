@@ -20,7 +20,7 @@
 
 (define *base-fvar-table* `(     
                  ;           (append         0)
-                 ;           (apply          0)
+                            (apply          0)
                             (<              0)
                             (=              0)
                             (>              0)
@@ -59,7 +59,7 @@
                             (string?        0)
                      ;       (symbol?           0)
                      ;       (symbol->string    0)
-                     ;       (vector            0)
+                            (vector         0)
                             (vector-length  0)
                             (vector-ref     0)
                             (vector-set!    0)
@@ -69,12 +69,19 @@
                         ))
 
 (define *fvar-table* '())                           
-                        
+          
+(define fvar-addr 0)
+
+          
 (define generate-fvar-table 
   (lambda (ast addr)
     (set! *fvar-table* *base-fvar-table*)
+    (set! fvar-addr addr)
+
+    (give-fvar-addr *fvar-table*)
     (for-each add-fvar ast)
-    (give-fvar-addr *fvar-table* addr)))
+    fvar-addr
+    ))
     
     
 (define add-fvar
@@ -91,15 +98,21 @@
 (define set-fvar!
   (lambda (fvar)
     (if (not (member fvar (map car *fvar-table*)))
-        (set! *fvar-table* (append *fvar-table* `((,fvar 0)))))))
-    
+        
+        (begin
+            (set! *fvar-table* (append *fvar-table* `((,fvar ,fvar-addr))))
+            (set! fvar-addr (+ fvar-addr 1 ))
+            ))))
+
+
 (define give-fvar-addr
-    (lambda(fvar-table addr)
+    (lambda(fvar-table)
         (if (null? fvar-table) 
-            addr
+            fvar-addr
             (begin
-                (set-car! (cdar fvar-table) addr)
-                (give-fvar-addr (cdr fvar-table) (+ 1 addr))))))
+                (set-car! (cdar fvar-table) fvar-addr)
+                (set! fvar-addr (+ 1 fvar-addr))
+                (give-fvar-addr (cdr fvar-table) )))))
                 
 (define lookup-fvar-table
     (lambda (fvar fvar-table)
@@ -715,10 +728,11 @@
             
             "  CMP(R6,R8);"                 NL
             
-            "  MOV(R6,R8);" 
+            "  MOV(R6,R8);"                 NL
             "  MUL(R7, INDD(R3,2));"        NL
       
             "  INCR(R2);"                   NL
+                        
             "  JUMP_LT(L_lower_loop);"      NL         
             
             "  MOV(R0,SOB_FALSE);"          NL   
@@ -868,6 +882,7 @@
             "  MUL(R7, INDD(R3,2));"        NL
       
             "  INCR(R2);"                   NL
+
             "  JUMP_GT(L_greater_loop);"    NL         
             
             "  MOV(R0,SOB_FALSE);"          NL   
@@ -1800,13 +1815,127 @@
     ))
     
     
+(define FVAR-apply
+    (lambda ()
+        (string-append
+            "// FVAR apply"                              NL
+            "  JUMP(L_apply_closure);"                   NL
+            "L_apply_code:"                              NL    
+
+            "  PUSH(FP);"                                NL
+            "  MOV(FP,SP);"                              NL
+
+            "  MOV(R8,FPARG(1));"                        NL
+            "  ADD(R8,3);"                               NL
+            
+            "  MOV(R3,FP);"                              NL
+            
+            "  SUB(R3,R8);"                              NL  ; R3 = last argument        
+            "  SUB(R8,3);"                               NL  ; R8 = num of args
+
+            "  MOV(R2,R3);"                              NL      
+            
+            "  MOV(R5,FPARG(-1));"                       NL ; R5 = return address  
+            "  MOV(R6,FPARG(-2));"                       NL ; R6 = oldFP      
+            
+            "  MOV(R7,FPARG(2));"                        NL ; R7 = procedure address
+            "  MOV(R1,FPARG(3));"                        NL ; R1 = list of args address
+            
+            "  MOV(R4,0);"                               NL ; R4 = i
+            
+        "COPY_LIST_TO_STACK:"                            NL
+            "  CMP(IND(R1),T_NIL);"                      NL
+            "  JUMP_EQ(COPY_LIST_TO_STACK_END);"         NL
+            
+            "  MOV(STACK(R3),INDD(R1,1));"               NL ; copy car of list to stack
+            "  INCR(R4);"                                NL
+            "  INCR(R3);"                                NL
+            "  MOV(R1,INDD(R1,2));"                      NL ; R1 = cdr of list of args
+            "  JUMP(COPY_LIST_TO_STACK);"                NL
+            
+        "COPY_LIST_TO_STACK_END:"                        NL
+            "  MOV(R10,R3);"                             NL
+            "  DECR(R3);"                                NL
+
+
+        "INVERT_OPERANDS:"                               NL
+            "  CMP(R3,R2);"                              NL
+            "  JUMP_LE(APPLY_END);"                      NL
+            
+            "  MOV(R9,STACK(R2));"                       NL ;R9 = arg at top of stack 
+            "  MOV(STACK(R2),STACK(R3));"                NL
+            "  MOV(STACK(R3),R9);"                       NL
+            "  INCR(R2);"                                NL
+            "  DECR(R3);"                                NL
+            "  JUMP(INVERT_OPERANDS);"                   NL
+            
+        "APPLY_END:"                                     NL
+            "  MOV(STACK(R10),R4);"                      NL  ; copy numb of args to stack
+            "  INCR(R10);"                               NL
+            "  MOV(STACK(R10),INDD(R7,1));"              NL ; copy env to stack
+            "  INCR(R10);"                               NL
+            "  MOV(STACK(R10),R5);"                      NL; copy return address to stack
+                    
+            "  SUB(R4,R8);"                              NL
+            "  ADD(SP,R4);"                              NL ; correct SP
+            
+            "  MOV(FP,R6);"                              NL; update oldFP
+            
+            "  JUMPA(INDD(R7,2));"                       NL ; apply procedure
+    
+            "L_apply_closure:"                           NL
+            (MALLOC-CLOSURE "L_apply_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'apply *fvar-table*)) "), R0);" NL NL
+        )
+    ))
+    
+    
+(define FVAR-vector
+    (lambda ()
+        (string-append
+            "// FVAR vector"                NL
+            "  JUMP(L_vector_var_closure);" NL
+            "L_vector_var_code:"            NL    
+                  
+            "  PUSH(FP);"                   NL
+            "  MOV(FP, SP);"                NL
+            
+            "  MOV(R1,FPARG(1));"           NL
+            "  MOV(R2,IMM(2));"             NL
+            
+            "L_vector_args:"                NL
+            "  CMP(R1,IMM(0));"             NL
+            "  JUMP_EQ(L_vector_args_end);" NL
+            "  MOV(R3,FPARG(R2));"          NL
+            "  PUSH(R3);"                   NL
+            "  DECR(R1);"                   NL
+            "  INCR(R2);"                   NL
+            "  JUMP(L_vector_args);"        NL
+            
+            "L_vector_args_end:"            NL
+            "  MOV(R4, FPARG(1));"          NL
+            "  PUSH(R4);"                   NL
+            "  CALL(MAKE_SOB_VECTOR);"      NL
+            
+            "  POP(R4);"                    NL
+            "  DROP(R4);"                   NL
+           
+            "  POP(FP);"                    NL
+            "  RETURN;"                     NL
+            
+            "L_vector_var_closure:"         NL
+            (MALLOC-CLOSURE "L_vector_var_code")
+            "  MOV(IND(" (n->s (lookup-fvar-table 'vector *fvar-table*)) "), R0);" NL NL
+        )
+    )) 
+    
     
 (define CODE-GEN-FVARS
     (lambda() 
         (string-append 
             "// *** FVAR CODE ***"    NL
 ;;            (FVAR-append)          
-;;             (FVAR-apply)
+            (FVAR-apply)
             (FVAR-<)
             (FVAR-=)
             (FVAR->)
@@ -1845,7 +1974,7 @@
             (FVAR-string?)
 ;;             (FVAR-symbol?)
 ;;             (FVAR-symbol->string)
-;;             (FVAR-vector)
+            (FVAR-vector)
             (FVAR-vector-length)
             (FVAR-vector-ref)
             (FVAR-vector-set!)
