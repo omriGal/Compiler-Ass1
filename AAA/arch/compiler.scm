@@ -903,6 +903,15 @@ done))
                                                 (append condition rest)
                                                 (cons condition rest))))))
             (inner-search inner-splice '() exps))))
+            
+            
+(define mapp
+        (lambda (f lst)
+            (if (null? lst)
+                lst
+                (cons   (f (car lst))
+                        (mapp f (cdr lst))))
+                                            ))
         
 ;--------  PARSE ---------------
 
@@ -1466,7 +1475,7 @@ done))
         (string-append 
             "  MOV(R0, IMM("
             (n->s (lookup-const-table parsed-exp *const-table*))
-            "));"
+            "));"   NL
         )
     ))
     
@@ -2054,22 +2063,29 @@ done))
 (define PRE-CONST-TABLE
     (lambda ()
         (string-append
-            "// *** CONST TABLE ***"                        NL
+            "// *********************************"          NL
+            "//          CONST TABLE "                      NL
+            "// *********************************"          NL
+
             "  ADD(IND(0),IMM(" (n->s stack-memory) "));"    NL
         )))
         
 (define POST-CONST-TABLE
         (string-append
-            "//*** CONST TABLE END ***"  NL NL
+            "// *********************************"          NL
+            "//          CONST TABLE  END"                  NL
+            "// *********************************"          NL NL
         )) 
                 
       
 ;-------------------------------------------------------------------------
-;                       Fvar table
+;                       Symbol table
 ;-------------------------------------------------------------------------   
 
-
-                                                            
+(define SYMBOL-TABLE
+        (lambda() 
+            (generate-symbol-table (- stack-memory 1))))
+            
 ;-------------------------------------------------------------------------
 ;                       File handling
 ;-------------------------------------------------------------------------
@@ -2119,7 +2135,8 @@ done))
             (write_to_file (generate-const-code *const-table*) file)
             (write_to_file POST-CONST-TABLE file)
             (write_to_file (CODE-GEN-FVARS) file) 
-            (map (lambda (exp) (write_to_file exp file)) code)
+            (write_to_file (SYMBOL-TABLE) file)
+            (mapp (lambda (exp) (write_to_file exp file)) code)
             (write_to_file EPILOGUE file)
             (close-output-port file))
     ))
@@ -2150,19 +2167,19 @@ done))
  
 (define semantic-analyzer
     (lambda (tokens)
-        (map (lambda (sub-sexpr)
-                        (annotate-tc
+        (mapp (lambda (sub-sexpr)
+                        ;(annotate-tc
                               (pe->lex-pe 
                                 (box-set 
                                     (remove-applic-lambda-nil
                                         (eliminate-nested-defines 
-                                            (parse sub-sexpr)))))))
+                                            (parse sub-sexpr)))))) ;)
             tokens)
     ))
 
 (define iter-code-gen
     (lambda (ast)
-         (map (lambda (ast-exp) (code-gen ast-exp 0)) ast)))
+         (mapp (lambda (ast-exp) (code-gen ast-exp 0)) ast)))
          
 (define PROLOGUE (list->string (read_file "prologue.scm")))
 
@@ -2176,9 +2193,9 @@ done))
 (define compile-scheme-file
     (lambda (inputFile outputFile)
     
-        (let* ( ;(prepare     (prepare_file inputFile))
-                ;(stream      (read_file "Stream.scm"))
-                (stream      (read_file inputFile))
+        (let* ( (prepare     (prepare_file inputFile))
+                (stream      (read_file "Stream.scm"))
+           ;     (stream      (read_file inputFile))
                 (tokens      (scanner stream))
                 (ast         (semantic-analyzer tokens))
                 (const-table (generate-const-table ast))

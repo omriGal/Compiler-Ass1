@@ -9,6 +9,82 @@
     (lambda (e)
         (format "~a" e)))
 
+
+;-------------------------------------------------------------------------
+;                      Symbol Table
+;-------------------------------------------------------------------------    
+
+(define *symbol-table* '())
+
+(define symbol-table-address 0)
+
+(define generate-symbol-table
+    (lambda (sym-addr)
+        (set! symbol-table-address sym-addr)
+        (string-append 
+        )
+        (cond ((null? *symbol-table*)
+                    (string-append 
+                        "// *********************************"          NL
+                        "//          SYMBOL TABLE "                     NL
+                        "// *********************************"          NL NL        
+
+                        
+                        "  MOV(R15,IND(0));"                                      NL
+                        "  CALL(MAKE_SOB_NIL);"                                    NL
+                        "  MOV(IND(R15),IND(R0));"  NL
+                    ;    "  MOV(R15,IMM(" (n->s symbol-table-address) "));"        NL
+                    
+                        "// *********************************"          NL
+                        "//          SYMBOL TABLE END"                  NL
+                        "// *********************************"          NL NL       
+                    )
+                )
+            (else 
+                    (string-append 
+                        "// *********************************"          NL
+                        "//          SYMBOL TABLE "                     NL
+                        "// *********************************"          NL NL        
+                        
+                        "  MOV(R15,IND(0));"        NL
+                        (iter-symbol-table *symbol-table*)
+                        
+                        "// *********************************"          NL
+                        "//          SYMBOL TABLE END"                  NL
+                        "// *********************************"          NL NL       
+
+                        
+                    ))
+        )
+                    
+    
+    ))
+    
+
+(define iter-symbol-table
+    (lambda (sym-table)
+        (if (null? (cdr sym-table))
+            (string-append
+                "  PUSH(IMM(T_NIL));" NL
+                "  PUSH(IMM(" (n->s (car sym-table)) "));" NL
+                "  CALL(MAKE_SOB_PAIR);"    NL        
+                "  DROP(IMM(2));"           NL NL
+                )
+            (string-append
+                
+                "  MOV(R0, IND(0));" NL
+                "  INCR(R0);" NL
+                "  INCR(R0);" NL
+                "  INCR(R0);" NL
+                "  PUSH(R0);" NL
+                "  PUSH(IMM(" (n->s (car sym-table)) "));" NL
+                "  CALL(MAKE_SOB_PAIR);"    NL        
+                "  DROP(IMM(2));"           NL
+                (iter-symbol-table (cdr sym-table))
+                ))
+     ))
+            
+        
 ;-------------------------------------------------------------------------
 ;                      Const Table
 ;-------------------------------------------------------------------------
@@ -33,6 +109,7 @@
 (define generate-const-table
   (lambda (ast)
      (set! *const-table* *base-const-table*)
+     (set! *symbol-table* '())
      (for-each add-const ast)
      (get-post-addr)
      ))
@@ -66,17 +143,17 @@
 
 (define get-mem-addr
   (lambda (const)
-    (addr-iter const *const-table*)))
+    (const-iter const *const-table*)))
 
-(define addr-iter
-  (lambda (c table)
+(define const-iter
+  (lambda (const table)
     (if (null? table)
-        (null)
+        "Const not found in *const-table"
         (let ((first (car table))
-              (last (cdr table)))
-          (if (equal? (cadr first) c)
-              (car first)
-              (addr-iter c last))))))
+              (rest (cdr table)))
+          (if (equal? (get-const first) const)
+              (get-addr first)
+              (const-iter const rest))))))
 
 (define get-mem-addr-lst
   (lambda (cs)
@@ -129,6 +206,8 @@
   (lambda (s)
     (let ((str (symbol->string s)))
       (begin (set-const! str)
+             (set! *symbol-table* (append *symbol-table* 
+                                    (list (lookup-const-table (symbol->string s) *const-table*)))) 
              `(,(get-post-addr) ,s (|T_SYMBOL| ,(get-mem-addr str)))))))
 
 (define add-string
