@@ -1543,15 +1543,7 @@ done))
     (lambda (applic-exp env)
         (letrec*    ((L-error-not-closure       (^label-applic-error-not-closure))
                      (func                      (car applic-exp))
-                     (params                    (reverse (cadr applic-exp)))
-;;                      (CODE-GEN-applic-params    (lambda(params env)     
-;;                                                             (cond   ((null? params) "")
-;;                                                                     (else (string-append
-;;                                                                                 (code-gen (car params) env)   NL
-;;                                                                                 "  PUSH(R0);"                 NL 
-;;                                                                                 (CODE-GEN-applic-params (cdr params) env)))
-;;                                                             )))
-                                                            )
+                     (params                    (reverse (cadr applic-exp))))
             (string-append
                  NL
                  "// ***CODE-GEN APPLIC***"                             NL
@@ -2033,23 +2025,45 @@ done))
     ))
 
     
+
+    
 (define CODE-GEN-tc-applic
     (lambda (proc args env)
-        (string-append 
-            "// ***CODE-GEN TC-APPLIC***"                                     NL
-            "  PUSH(IMM(T_NIL));"                                             NL
-            (CODE-GEN-applic-params args env)                                 NL
-            "  PUSH(IMM(" (n->s (length args)) "));"                          NL       
-            (code-gen proc env)                                               NL
-            "  CMP(INDD(R0,0), IMM(T_CLOSURE));"                              NL
-            "  JUMP_NE(L_error_cannot_apply_none_closure);"                   NL
-            "// Push Environment"                                             NL
-            "  PUSH(INDD(R0, 1));"                                            NL
-            "  PUSH(FPARG(-1));"                                              NL
-            "  MOV(FP, FPARG(-2));"                                           NL
-            "  JUMPA(INDD(R0, 2));"                                           NL
-        )
-    ))
+        (let (  (params  (reverse args))
+                (move_stack_tc_applic (^label-tc-applic-move-stack)))
+         (string-append
+            "// ***CODE-GEN TC-APPLIC***"                     NL
+            "  PUSH(SOB_NIL);"                                NL
+            (CODE-GEN-applic-params params env)               NL
+            "  MOV(R0, IMM(" (n->s (length params)) "));"     NL
+            "  PUSH(R0);"                                     NL
+            (code-gen proc env)                               NL
+            "  CMP(INDD(R0,0), IMM(T_CLOSURE));"              NL
+            "  JUMP_NE(L_error_cannot_apply_none_closure);"   NL
+            "  PUSH(INDD(R0,1));"                             NL
+            "  PUSH(FPARG(-1));"                              NL
+            "  MOV(R1,FP);"                                   NL
+            "  MOV(R2,FPARG(1));"                             NL
+            "  ADD(R2,IMM(5));"                               NL
+            "  MOV(R3,FP);"                                   NL
+            "  SUB(R3,R2);"                                   NL
+            
+            "  MOV(FP,FPARG(-2));"                            NL
+            "  MOV(R4,SP);"                                   NL
+            "  DECR(R4);"                                     NL 
+            
+            move_stack_tc_applic ":"                          NL
+            "  MOV(STACK(R3),STACK(R1));"                     NL
+            "  INCR(R1);"                                     NL
+            "  INCR(R3);"                                     NL
+            "  CMP(R1,R4);"                                   NL
+            "  JUMP_LE("move_stack_tc_applic ");"             NL
+            
+            "  MOV(SP,R3);"                                   NL
+            "  JUMPA(INDD(R0,2));"                            NL
+
+        ))
+    ))  
     
 
                                                 
@@ -2168,12 +2182,12 @@ done))
 (define semantic-analyzer
     (lambda (tokens)
         (mapp (lambda (sub-sexpr)
-                        ;(annotate-tc
+                        (annotate-tc
                               (pe->lex-pe 
                                 (box-set 
                                     (remove-applic-lambda-nil
                                         (eliminate-nested-defines 
-                                            (parse sub-sexpr)))))) ;)
+                                            (parse sub-sexpr)))))) )
             tokens)
     ))
 

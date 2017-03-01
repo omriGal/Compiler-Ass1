@@ -58,24 +58,25 @@
 (define ^label-closure-lambda-opt-loop-create-list-end (^^label "L_closure_lambda_opt_loop_create_list_end_"))     
 
 
-(define ^label-closure-var-code (^^label "L_closure_var_code_"))
+(define ^label-closure-var-body (^^label "L_closure_lambda_var_body_"))
 
-(define ^label-closure-var-exit (^^label "L_closure_var_exit_"))
+(define ^label-closure-var-end (^^label "L_closure_lambda_var_end_"))
+;;     
+(define ^label-closure-var-loop-copy-env (^^label "L_closure_lambda_var_loop_copy_"))
+
+(define ^label-closure-var-loop-copy-env-end (^^label "L_closure_lambda_var_loop_copy_end_"))
+
+(define ^label-closure-var-loop-copy-stack (^^label "L_closure_lambda_var_loop_copy_stack_"))
+
+(define ^label-closure-var-loop-copy-stack-end (^^label "L_closure_lambda_var_loop_copy_stack_end_"))
+
+
+(define ^label-closure-var-loop-create-list (^^label "L_closure_lambda_var_loop_create_list_"))
+
+(define ^label-closure-var-loop-create-list-end (^^label "L_closure_lambda_var_loop_create_list_end_"))
     
-(define ^label-closure-var-loop-copy (^^label "L_closure_var_loop_copy_"))
+(define ^label-tc-applic-move-stack (^^label "L_tc_applic_move_stack_"))
 
-(define ^label-closure-var-loop-copy-end (^^label "L_closure_var_loop_copy_end_"))
 
-(define ^label-closure-var-loop-copy-stack-end (^^label "L_closure_var_loop_copy_stack_end_"))
 
-(define ^label-closure-var-loop-copy-stack (^^label "L_closure_var_loop_copy_stack_"))
 
-(define ^label-closure-var-loop-create-list (^^label "L_closure_var_loop_create_list_"))
-
-(define ^label-closure-var-loop-create-list-end (^^label "L_closure_var_loop_create_list_end_"))
-    
-(define ^label-fix-stack-loop-var (^^label "L_fix_stack_loop_var_"))
-
-(define ^label-fix-stack-loop-var-end (^^label "L_fix_stack_loop_var_end_"))
-
-(define ^label-fix-stack-loop-var-end-loop (^^label "L_fix_stack_loop_var_end_loop_"))

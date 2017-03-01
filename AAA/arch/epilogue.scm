@@ -2,13 +2,13 @@
 JUMP(L_errors_end);
 
 L_closure_error_args_count:
-  printf("INCORRECT_NUMBER_OF_ARGS \n");
+  printf("INCORRECT_NUMBER_OF_ARGS. \n");
   JUMP(L_code_finish);
 
 L_error_cannot_apply_none_closure:
-  printf("CANNOT APPLY NONE CLOSURE \n");
+  printf("CANNOT APPLY NONE CLOSURE. \n");
   JUMP(L_code_finish);
-  
+    
 L_error_car_not_pair:
   printf("EXCEPION in CAR: Variable is not a pair. \n");
   JUMP(L_code_finish);
@@ -91,6 +91,14 @@ L_vector_set_1_not_vector:
   
 L_vector_set_2_not_int:
   printf("EXCEPION in VECTOR-SET!: 2nd variable is not an integer. \n");
+  JUMP(L_code_finish);
+  
+L_remainder_not_integer:
+  printf("EXCEPION in REMAINDER: variable is not an integer. \n");
+  JUMP(L_code_finish);
+
+L_string2symbol_not_string:
+  printf("EXCEPION in STRING->SYMBOL variable is not a string. \n");
   JUMP(L_code_finish);
   
 L_errors_end:

@@ -72,11 +72,9 @@
                 )
             (string-append
                 
-                "  MOV(R0, IND(0));" NL
-                "  INCR(R0);" NL
-                "  INCR(R0);" NL
-                "  INCR(R0);" NL
-                "  PUSH(R0);" NL
+                "  MOV(R0, IND(0));"    NL
+                "  ADD(R0, IMM(3));"    NL
+                "  PUSH(R0);"           NL
                 "  PUSH(IMM(" (n->s (car sym-table)) "));" NL
                 "  CALL(MAKE_SOB_PAIR);"    NL        
                 "  DROP(IMM(2));"           NL
@@ -206,9 +204,8 @@
   (lambda (s)
     (let ((str (symbol->string s)))
       (begin (set-const! str)
-             (set! *symbol-table* (append *symbol-table* 
-                                    (list (lookup-const-table (symbol->string s) *const-table*)))) 
-             `(,(get-post-addr) ,s (|T_SYMBOL| ,(get-mem-addr str)))))))
+             (set! *symbol-table* (cons (get-post-addr) *symbol-table*)) 
+             `(,(car *symbol-table*) ,s (|T_SYMBOL| ,(get-mem-addr str)))))))
 
 (define add-string
   (lambda (str)
