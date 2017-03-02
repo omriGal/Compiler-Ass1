@@ -78,5 +78,5 @@
 (define ^label-tc-applic-move-stack (^^label "L_tc_applic_move_stack_"))
 
 
-
+(define ^label-print-ans (^^label "L_print_ans_"))
 

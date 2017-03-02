@@ -1760,9 +1760,9 @@ done))
 (define CODE-GEN-box-get-pvar
     (lambda(minor env)
         (string-append 
-                "// CODE-GEN BOX-GET-pvar"                 NL
-                "  MOV(R0, FPARG(" (n->s (+ minor 2))"));" NL 
-                "  MOV(R0, IND(R0));"                      NL
+                "// CODE-GEN BOX-GET-pvar"                NL
+                "  MOV(R0, FPARG(" (n->s (+ minor 2))");" NL 
+                "  MOV(R0, IND(R0));"                     NL
           )
     ))
     
@@ -2191,9 +2191,24 @@ done))
             tokens)
     ))
 
+(define code-gen-helper
+    (lambda (ast-exp env)
+        (let ((label-print (^label-print-ans)))
+        (string-append
+            (code-gen ast-exp env)
+            "  CMP(R0,SOB_VOID);"               NL
+            "  JUMP_EQ(" label-print ");"       NL
+            "  PUSH(R0);"                       NL
+            "  CALL(WRITE_SOB);"                NL
+            "  DROP(1)"                         NL
+            "  CALL(NEWLINE);"                  NL
+            label-print ":"                     NL NL
+        ))
+))
+    
 (define iter-code-gen
     (lambda (ast)
-         (mapp (lambda (ast-exp) (code-gen ast-exp 0)) ast)))
+         (mapp (lambda (ast-exp) (code-gen-helper ast-exp 0)) ast)))
          
 (define PROLOGUE (list->string (read_file "prologue.scm")))
 
@@ -2209,7 +2224,6 @@ done))
     
         (let* ( (prepare     (prepare_file inputFile))
                 (stream      (read_file "Stream.scm"))
-           ;     (stream      (read_file inputFile))
                 (tokens      (scanner stream))
                 (ast         (semantic-analyzer tokens))
                 (const-table (generate-const-table ast))
@@ -2219,7 +2233,6 @@ done))
           (set! stack-memory (+ fvar-table 1))
           (create_file outputFile code-input)
 
-;              (create_file outputFile  (code-gen-primitive) code-input )
     )))
     
 (define sofi

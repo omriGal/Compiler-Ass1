@@ -106,16 +106,6 @@ L_errors_end:
 
 
 
- CMP(R0,SOB_VOID);
- JUMP_EQ(_VOID);
- PUSH(R0);
- CALL(WRITE_SOB);
- _VOID:
- CALL(NEWLINE);
-
-  DROP(1);
-
-
 L_code_finish:
   STOP_MACHINE;
 

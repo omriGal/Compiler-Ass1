@@ -114,6 +114,7 @@
 ;;     (lambda (x)
 ;;         (cdr (cdddr x))))
 ;;         
+
 (define list 
     (lambda x x))
     
@@ -131,4 +132,6 @@
         m
         (cons (car l) (append (cdr l) m))))
         
-(zero? (- 5 (+ 1 2 2)))
+#t
+#f
+'()

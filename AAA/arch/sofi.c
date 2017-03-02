@@ -1660,16 +1660,16 @@ MOV(IND(49), R0);
 // Copy environments
   MOV(R3, IMM(0));
   MOV(R4, IMM(1));
-L_closure_lambda_var_loop_copy_3:
+L_closure_lambda_var_loop_copy_1:
   CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_lambda_var_loop_copy_end_3);
+  JUMP_EQ (L_closure_lambda_var_loop_copy_end_1);
   MOV(INDD(R2, R4), INDD(R1, R3));
   INCR(R3);
   INCR(R4);
-  JUMP(L_closure_lambda_var_loop_copy_3);
-L_closure_lambda_var_loop_copy_end_3:
+  JUMP(L_closure_lambda_var_loop_copy_1);
+L_closure_lambda_var_loop_copy_end_1:
   CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_3)
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_1)
   MOV(R3,FPARG(1));
   PUSH(R3);
   CALL(MALLOC);
@@ -1678,52 +1678,60 @@ L_closure_lambda_var_loop_copy_end_3:
 // Copy from stack
   MOV(R4, IMM(0));
   MOV(R5, IMM(2));
-L_closure_lambda_var_loop_copy_stack_3:
+L_closure_lambda_var_loop_copy_stack_1:
   CMP(R4, R3);
-  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_3);
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_1);
   MOV(INDD(INDD(R2,0),R4),FPARG(R5));
   INCR(R4);
   INCR(R5);
-  JUMP(L_closure_lambda_var_loop_copy_stack_3);
-L_closure_lambda_var_loop_copy_stack_end_3:
+  JUMP(L_closure_lambda_var_loop_copy_stack_1);
+L_closure_lambda_var_loop_copy_stack_end_1:
 // Create Closure
   PUSH(IMM(3));
   CALL(MALLOC);
   DROP(1);
   MOV(INDD(R0,0),IMM(T_CLOSURE));
   MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_lambda_var_body_3));
-  JUMP(L_closure_lambda_var_end_3);
+  MOV(INDD(R0,2),LABEL(L_closure_lambda_var_body_1));
+  JUMP(L_closure_lambda_var_end_1);
 
 // Closure body
-L_closure_lambda_var_body_3:
+L_closure_lambda_var_body_1:
   PUSH(FP);
   MOV(FP,SP);
 //Converting variadic Parameters to List
   MOV(R1, SOB_NIL);
   MOV(R4, FPARG(1));
   INCR(R4);
-L_closure_lambda_var_loop_create_list_3:
+L_closure_lambda_var_loop_create_list_1:
   CMP(R4, IMM(1));
-  JUMP_EQ(L_closure_lambda_var_loop_create_list_end_3);
+  JUMP_EQ(L_closure_lambda_var_loop_create_list_end_1);
   PUSH(R1);
   PUSH(FPARG(R4));
   CALL(MAKE_SOB_PAIR);
   DROP(2);
   MOV(R1, R0);
   DECR(R4);
-  JUMP(L_closure_lambda_var_loop_create_list_3);
-L_closure_lambda_var_loop_create_list_end_3:
+  JUMP(L_closure_lambda_var_loop_create_list_1);
+L_closure_lambda_var_loop_create_list_end_1:
   MOV(FPARG(2), R1);
 // CODE-GEN pvar
   MOV(R0, FPARG(2));
 
   POP(FP);
   RETURN;
-L_closure_lambda_var_end_3:
+L_closure_lambda_var_end_1:
 
   MOV(IND(50), R0);
   MOV(R0, IMM(SOB_VOID));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_1);
+  PUSH(R0);
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_1:
+
 // ***CODE-GEN DEF***
 
 // ***CODE-GEN LAMBDA-SIMPLE***
@@ -1736,16 +1744,16 @@ L_closure_lambda_var_end_3:
 // Copy environments
   MOV(R3, IMM(0));
   MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_11:
+L_closure_loop_copy_env_lambda_simple_1:
   CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_11);
+  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_1);
   MOV(INDD(R2, R4), INDD(R1, R3));
   INCR(R3);
   INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_11);
-L_closure_loop_copy_env_end_lambda_simple_11:
+  JUMP(L_closure_loop_copy_env_lambda_simple_1);
+L_closure_loop_copy_env_end_lambda_simple_1:
   CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_11)
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_1)
   MOV(R3,FPARG(1));
   PUSH(R3);
   CALL(MALLOC);
@@ -1754,25 +1762,25 @@ L_closure_loop_copy_env_end_lambda_simple_11:
 // Copy from stack
   MOV(R4, IMM(0));
   MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_11:
+L_closure_loop_copy_stack_lambda_simple_1:
   CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_11);
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_1);
   MOV(INDD(INDD(R2,0),R4),FPARG(R5));
   INCR(R4);
   INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_11);
-L_closure_loop_copy_stack_end_lambda_simple_11:
+  JUMP(L_closure_loop_copy_stack_lambda_simple_1);
+L_closure_loop_copy_stack_end_lambda_simple_1:
 // Create Closure
   PUSH(IMM(3));
   CALL(MALLOC);
   DROP(1);
   MOV(INDD(R0,0),IMM(T_CLOSURE));
   MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_11));
-  JUMP(L_closure_exit_lambda_simple_11);
+  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_1));
+  JUMP(L_closure_exit_lambda_simple_1);
 
 // Closure body
-L_closure_body_lambda_simple_11:
+L_closure_body_lambda_simple_1:
   PUSH(FP);
   MOV(FP,SP);
   CMP(FPARG(1), IMM(2));
@@ -1804,12 +1812,12 @@ L_closure_body_lambda_simple_11:
   DROP(R1);
 
   CMP(R0, IMM(SOB_FALSE));
-  JUMP_EQ(L_if3_else_8);
+  JUMP_EQ(L_if3_else_1);
 // CODE-GEN pvar
   MOV(R0, FPARG(3));
 
-  JUMP(L_if3_exit_8);
-L_if3_else_8:
+  JUMP(L_if3_exit_1);
+L_if3_else_1:
 // ***CODE-GEN TC-APPLIC***
   PUSH(SOB_NIL);
 
@@ -1926,23 +1934,31 @@ L_if3_else_8:
   MOV(FP,FPARG(-2));
   MOV(R4,SP);
   DECR(R4);
-L_tc_applic_move_stack_10:
+L_tc_applic_move_stack_1:
   MOV(STACK(R3),STACK(R1));
   INCR(R1);
   INCR(R3);
   CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_10);
+  JUMP_LE(L_tc_applic_move_stack_1);
   MOV(SP,R3);
   JUMPA(INDD(R0,2));
 
-L_if3_exit_8:
+L_if3_exit_1:
 
   POP(FP);
   RETURN;
-L_closure_exit_lambda_simple_11:
+L_closure_exit_lambda_simple_1:
 
   MOV(IND(51), R0);
   MOV(R0, IMM(SOB_VOID));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_2);
+  PUSH(R0);
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_2:
+
 // ***CODE-GEN DEF***
 
 // ***CODE-GEN LAMBDA-SIMPLE***
@@ -1955,16 +1971,16 @@ L_closure_exit_lambda_simple_11:
 // Copy environments
   MOV(R3, IMM(0));
   MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_12:
+L_closure_loop_copy_env_lambda_simple_2:
   CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_12);
+  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_2);
   MOV(INDD(R2, R4), INDD(R1, R3));
   INCR(R3);
   INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_12);
-L_closure_loop_copy_env_end_lambda_simple_12:
+  JUMP(L_closure_loop_copy_env_lambda_simple_2);
+L_closure_loop_copy_env_end_lambda_simple_2:
   CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_12)
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_2)
   MOV(R3,FPARG(1));
   PUSH(R3);
   CALL(MALLOC);
@@ -1973,25 +1989,25 @@ L_closure_loop_copy_env_end_lambda_simple_12:
 // Copy from stack
   MOV(R4, IMM(0));
   MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_12:
+L_closure_loop_copy_stack_lambda_simple_2:
   CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_12);
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_2);
   MOV(INDD(INDD(R2,0),R4),FPARG(R5));
   INCR(R4);
   INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_12);
-L_closure_loop_copy_stack_end_lambda_simple_12:
+  JUMP(L_closure_loop_copy_stack_lambda_simple_2);
+L_closure_loop_copy_stack_end_lambda_simple_2:
 // Create Closure
   PUSH(IMM(3));
   CALL(MALLOC);
   DROP(1);
   MOV(INDD(R0,0),IMM(T_CLOSURE));
   MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_12));
-  JUMP(L_closure_exit_lambda_simple_12);
+  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_2));
+  JUMP(L_closure_exit_lambda_simple_2);
 
 // Closure body
-L_closure_body_lambda_simple_12:
+L_closure_body_lambda_simple_2:
   PUSH(FP);
   MOV(FP,SP);
   CMP(FPARG(1), IMM(2));
@@ -2023,12 +2039,12 @@ L_closure_body_lambda_simple_12:
   DROP(R1);
 
   CMP(R0, IMM(SOB_FALSE));
-  JUMP_EQ(L_if3_else_9);
+  JUMP_EQ(L_if3_else_2);
 // CODE-GEN pvar
   MOV(R0, FPARG(3));
 
-  JUMP(L_if3_exit_9);
-L_if3_else_9:
+  JUMP(L_if3_exit_2);
+L_if3_else_2:
 // ***CODE-GEN TC-APPLIC***
   PUSH(SOB_NIL);
 
@@ -2124,639 +2140,58 @@ L_if3_else_9:
   MOV(FP,FPARG(-2));
   MOV(R4,SP);
   DECR(R4);
-L_tc_applic_move_stack_11:
+L_tc_applic_move_stack_2:
   MOV(STACK(R3),STACK(R1));
   INCR(R1);
   INCR(R3);
   CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_11);
+  JUMP_LE(L_tc_applic_move_stack_2);
   MOV(SP,R3);
   JUMPA(INDD(R0,2));
 
-L_if3_exit_9:
+L_if3_exit_2:
 
   POP(FP);
   RETURN;
-L_closure_exit_lambda_simple_12:
+L_closure_exit_lambda_simple_2:
 
   MOV(IND(52), R0);
   MOV(R0, IMM(SOB_VOID));
-
-// ***CODE-GEN APPLIC***
-// Push Parameters
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_19:
-  CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_19);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_19);
-L_closure_loop_copy_env_end_lambda_simple_19:
-  CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_19)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_19:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_19);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_19);
-L_closure_loop_copy_stack_end_lambda_simple_19:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_19));
-  JUMP(L_closure_exit_lambda_simple_19);
-
-// Closure body
-L_closure_body_lambda_simple_19:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(2));
-  JUMP_NE(L_closure_error_args_count);
-// CODE-GEN pvar
-  MOV(R0, FPARG(2));
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_19:
-
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_3);
   PUSH(R0);
-// Push Parameters Number
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// Push Closure
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_3:
 
-// ***CODE-GEN APPLIC***
-// Push Parameters
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_18:
-  CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_18);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_18);
-L_closure_loop_copy_env_end_lambda_simple_18:
-  CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_18)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_18:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_18);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_18);
-L_closure_loop_copy_stack_end_lambda_simple_18:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_18));
-  JUMP(L_closure_exit_lambda_simple_18);
-
-// Closure body
-L_closure_body_lambda_simple_18:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
-  JUMP_NE(L_closure_error_args_count);
-// ***CODE-GEN TC-APPLIC***
-  PUSH(SOB_NIL);
-  MOV(R0, IMM(5));
-
-  PUSH(R0);
   MOV(R0, IMM(3));
-
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_4);
   PUSH(R0);
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_4:
+
+  MOV(R0, IMM(5));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_5);
+  PUSH(R0);
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_5:
 
   MOV(R0, IMM(2));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_6);
   PUSH(R0);
-// CODE-GEN pvar
-  MOV(R0, FPARG(2));
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_6:
 
-  CMP(INDD(R0,0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-  PUSH(INDD(R0,1));
-  PUSH(FPARG(-1));
-  MOV(R1,FP);
-  MOV(R2,FPARG(1));
-  ADD(R2,IMM(5));
-  MOV(R3,FP);
-  SUB(R3,R2);
-  MOV(FP,FPARG(-2));
-  MOV(R4,SP);
-  DECR(R4);
-L_tc_applic_move_stack_15:
-  MOV(STACK(R3),STACK(R1));
-  INCR(R1);
-  INCR(R3);
-  CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_15);
-  MOV(SP,R3);
-  JUMPA(INDD(R0,2));
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_18:
-
-  PUSH(R0);
-// Push Parameters Number
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// Push Closure
-
-// ***CODE-GEN APPLIC***
-// Push Parameters
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_15:
-  CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_15);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_15);
-L_closure_loop_copy_env_end_lambda_simple_15:
-  CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_15)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_15:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_15);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_15);
-L_closure_loop_copy_stack_end_lambda_simple_15:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_15));
-  JUMP(L_closure_exit_lambda_simple_15);
-
-// Closure body
-L_closure_body_lambda_simple_15:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
-  JUMP_NE(L_closure_error_args_count);
-// ***CODE-GEN TC-APPLIC***
-  PUSH(SOB_NIL);
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(2));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_16:
-  CMP(R3, IMM(1));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_16);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_16);
-L_closure_loop_copy_env_end_lambda_simple_16:
-  CMP(IMM(1), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_16)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_16:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_16);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_16);
-L_closure_loop_copy_stack_end_lambda_simple_16:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_16));
-  JUMP(L_closure_exit_lambda_simple_16);
-
-// Closure body
-L_closure_body_lambda_simple_16:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(2));
-  JUMP_NE(L_closure_error_args_count);
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(3));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_17:
-  CMP(R3, IMM(2));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_17);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_17);
-L_closure_loop_copy_env_end_lambda_simple_17:
-  CMP(IMM(2), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_17)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_17:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_17);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_17);
-L_closure_loop_copy_stack_end_lambda_simple_17:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_17));
-  JUMP(L_closure_exit_lambda_simple_17);
-
-// Closure body
-L_closure_body_lambda_simple_17:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
-  JUMP_NE(L_closure_error_args_count);
-// ***CODE-GEN TC-APPLIC***
-  PUSH(SOB_NIL);
-// CODE-GEN bvar
-  MOV(R1, FPARG(0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R0, R1);
-
-  PUSH(R0);
-// CODE-GEN bvar
-  MOV(R1, FPARG(0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R1, INDD(R1, 1));
-  MOV(R0, R1);
-
-  PUSH(R0);
-
-  MOV(R0, IMM(2));
-  PUSH(R0);
-// CODE-GEN pvar
-  MOV(R0, FPARG(2));
-
-  CMP(INDD(R0,0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-  PUSH(INDD(R0,1));
-  PUSH(FPARG(-1));
-  MOV(R1,FP);
-  MOV(R2,FPARG(1));
-  ADD(R2,IMM(5));
-  MOV(R3,FP);
-  SUB(R3,R2);
-  MOV(FP,FPARG(-2));
-  MOV(R4,SP);
-  DECR(R4);
-L_tc_applic_move_stack_14:
-  MOV(STACK(R3),STACK(R1));
-  INCR(R1);
-  INCR(R3);
-  CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_14);
-  MOV(SP,R3);
-  JUMPA(INDD(R0,2));
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_17:
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_16:
-
-  PUSH(R0);
-
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// CODE-GEN pvar
-  MOV(R0, FPARG(2));
-
-  CMP(INDD(R0,0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-  PUSH(INDD(R0,1));
-  PUSH(FPARG(-1));
-  MOV(R1,FP);
-  MOV(R2,FPARG(1));
-  ADD(R2,IMM(5));
-  MOV(R3,FP);
-  SUB(R3,R2);
-  MOV(FP,FPARG(-2));
-  MOV(R4,SP);
-  DECR(R4);
-L_tc_applic_move_stack_13:
-  MOV(STACK(R3),STACK(R1));
-  INCR(R1);
-  INCR(R3);
-  CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_13);
-  MOV(SP,R3);
-  JUMPA(INDD(R0,2));
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_15:
-
-  PUSH(R0);
-// Push Parameters Number
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// Push Closure
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_13:
-  CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_13);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_13);
-L_closure_loop_copy_env_end_lambda_simple_13:
-  CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_13)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_13:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_13);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_13);
-L_closure_loop_copy_stack_end_lambda_simple_13:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_13));
-  JUMP(L_closure_exit_lambda_simple_13);
-
-// Closure body
-L_closure_body_lambda_simple_13:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
-  JUMP_NE(L_closure_error_args_count);
-
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(2));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_14:
-  CMP(R3, IMM(1));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_14);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_14);
-L_closure_loop_copy_env_end_lambda_simple_14:
-  CMP(IMM(1), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_14)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_14:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_14);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_14);
-L_closure_loop_copy_stack_end_lambda_simple_14:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_14));
-  JUMP(L_closure_exit_lambda_simple_14);
-
-// Closure body
-L_closure_body_lambda_simple_14:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
-  JUMP_NE(L_closure_error_args_count);
-// ***CODE-GEN TC-APPLIC***
-  PUSH(SOB_NIL);
-
-// ***CODE-GEN APPLIC***
-// Push Parameters
-// CODE-GEN pvar
-  MOV(R0, FPARG(2));
-
-  PUSH(R0);
-// Push Parameters Number
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// Push Closure
-// CODE-GEN bvar
-  MOV(R1, FPARG(0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R0, R1);
-
-  CMP(INDD(R0, 0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-// Push Environment
-  PUSH(INDD(R0, 1));
-// APPLIC
-  CALLA(INDD(R0, 2));
-  DROP(1);
-  POP(R1);
-  DROP(R1);
-
-  PUSH(R0);
-
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// CODE-GEN bvar
-  MOV(R1, FPARG(0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R1, INDD(R1, 0));
-  MOV(R0, R1);
-
-  CMP(INDD(R0,0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-  PUSH(INDD(R0,1));
-  PUSH(FPARG(-1));
-  MOV(R1,FP);
-  MOV(R2,FPARG(1));
-  ADD(R2,IMM(5));
-  MOV(R3,FP);
-  SUB(R3,R2);
-  MOV(FP,FPARG(-2));
-  MOV(R4,SP);
-  DECR(R4);
-L_tc_applic_move_stack_12:
-  MOV(STACK(R3),STACK(R1));
-  INCR(R1);
-  INCR(R3);
-  CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_12);
-  MOV(SP,R3);
-  JUMPA(INDD(R0,2));
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_14:
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_13:
-
-  CMP(INDD(R0, 0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-// Push Environment
-  PUSH(INDD(R0, 1));
-// APPLIC
-  CALLA(INDD(R0, 2));
-  DROP(1);
-  POP(R1);
-  DROP(R1);
-
-  CMP(INDD(R0, 0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-// Push Environment
-  PUSH(INDD(R0, 1));
-// APPLIC
-  CALLA(INDD(R0, 2));
-  DROP(1);
-  POP(R1);
-  DROP(R1);
-
-  CMP(INDD(R0, 0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-// Push Environment
-  PUSH(INDD(R0, 1));
-// APPLIC
-  CALLA(INDD(R0, 2));
-  DROP(1);
-  POP(R1);
-  DROP(R1);
 
 JUMP(L_errors_end);
 
@@ -2863,16 +2298,6 @@ L_string2symbol_not_string:
 L_errors_end:
 
 
-
-
- CMP(R0,SOB_VOID);
- JUMP_EQ(_VOID);
- PUSH(R0);
- CALL(WRITE_SOB);
- _VOID:
- CALL(NEWLINE);
-
-  DROP(1);
 
 
 L_code_finish:
