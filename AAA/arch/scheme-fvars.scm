@@ -115,20 +115,20 @@
 ;;         (cdr (cdddr x))))
 ;;         
 
-(define list 
-    (lambda x x))
-    
-    
-(define map
-        (lambda (f lst)
-            (if (null? lst)
-                lst
-                (cons   (f (car lst))
-                        (map f (cdr lst))))))
-          
-
-(define (append l m)
-    (if (null? l) 
-        m
-        (cons (car l) (append (cdr l) m))))
+;; (define list 
+;;     (lambda x x))
+;;     
+;;     
+;; (define map
+;;         (lambda (f lst)
+;;             (if (null? lst)
+;;                 lst
+;;                 (cons   (f (car lst))
+;;                         (map f (cdr lst))))))
+;;           
+;; 
+;; (define (append l m)
+;;     (if (null? l) 
+;;         m
+;;         (cons (car l) (append (cdr l) m))))
         
