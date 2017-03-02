@@ -1,19 +1,9 @@
-
-
-
-;(map car '((1 2) (3 4)))
-
-;(list  1 (list 2 3) )
-
-;(append (list 1 2) (list 3 4))
-
-
-
-;(eq? (string->symbol "a") (string->symbol (make-string 1 #\a)))
-
-
-'abc
-'rrr
-'bbb
-
-(string->symbol "d")
+((((lambda (x)
+     (lambda (y)
+       (x (x y))))
+   (lambda (p)
+     (p (lambda (x y)
+ (lambda (p)
+   (p y x))))))
+  (lambda (z) (z #t #f)))
+ (lambda (x y) x)) 
