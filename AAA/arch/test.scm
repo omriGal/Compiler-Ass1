@@ -12,3 +12,8 @@
 ;(eq? (string->symbol "a") (string->symbol (make-string 1 #\a)))
 
 
+'abc
+'rrr
+'bbb
+
+(string->symbol "d")

@@ -1,5 +1,5 @@
-/* scheme/make_sob_pair.asm
- * Take pointers to two sexprs, and place the corresponding 
+/* scheme/make_sob_fraction.asm
+ * Take pointers to two integers, and makes a fraction 
  * 
  */
 

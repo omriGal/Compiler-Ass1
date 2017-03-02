@@ -1,5 +1,5 @@
-/* scheme/write_sob_integer.asm
- * Take a pointer to a Scheme integer object, and 
+/* scheme/write_sob_fraction.asm
+ * Take a pointer to a Scheme fraction object, and 
  * prints (to stdout) the character representation
  * of that object.
  * 
