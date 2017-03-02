@@ -1760,9 +1760,9 @@ done))
 (define CODE-GEN-box-get-pvar
     (lambda(minor env)
         (string-append 
-                "// CODE-GEN BOX-GET-pvar"                NL
-                "  MOV(R0, FPARG(" (n->s (+ minor 2))");" NL 
-                "  MOV(R0, IND(R0));"                     NL
+                "// CODE-GEN BOX-GET-pvar"                 NL
+                "  MOV(R0, FPARG(" (n->s (+ minor 2))"));" NL 
+                "  MOV(R0, IND(R0));"                      NL
           )
     ))
     
