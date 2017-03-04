@@ -33,15 +33,13 @@ int main()
 // *********************************
 //          CONST TABLE 
 // *********************************
-  ADD(IND(0),IMM(53));
+  ADD(IND(0),IMM(54));
   MOV(IND(1),IMM(T_VOID));
   MOV(IND(2),IMM(T_NIL));
   MOV(IND(3),IMM(T_BOOL));
   MOV(IND(4),IMM(1));
   MOV(IND(5),IMM(T_BOOL));
   MOV(IND(6),IMM(0));
-  MOV(IND(7),IMM(T_INTEGER));
-  MOV(IND(8),IMM(3));
 // *********************************
 //          CONST TABLE  END
 // *********************************
@@ -103,7 +101,7 @@ L_apply_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_apply_code));
-  MOV(IND(9), R0);
+  MOV(IND(7), R0);
 
 // FVAR <
   JUMP(L_lower_closure);
@@ -162,7 +160,7 @@ L_lower_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_lower_code));
-  MOV(IND(10), R0);
+  MOV(IND(8), R0);
 
 // FVAR =
   JUMP(L_equal_closure);
@@ -214,7 +212,7 @@ L_equal_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_equal_code));
-  MOV(IND(11), R0);
+  MOV(IND(9), R0);
 
 // FVAR >
   JUMP(L_greater_closure);
@@ -272,7 +270,7 @@ L_greater_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_greater_code));
-  MOV(IND(12), R0);
+  MOV(IND(10), R0);
 
 // FVAR +
   JUMP(L_plus_closure);
@@ -329,7 +327,7 @@ L_plus_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_plus_code));
-  MOV(IND(13), R0);
+  MOV(IND(11), R0);
 
 // FVAR /
   JUMP(L_div_closure);
@@ -431,7 +429,7 @@ L_div_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_div_code));
-  MOV(IND(14), R0);
+  MOV(IND(12), R0);
 
 // FVAR *
   JUMP(L_mul_closure);
@@ -485,7 +483,7 @@ L_mul_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_mul_code));
-  MOV(IND(15), R0);
+  MOV(IND(13), R0);
 
 // FVAR -
   JUMP(L_minus_closure);
@@ -567,7 +565,7 @@ L_minus_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_minus_code));
-  MOV(IND(16), R0);
+  MOV(IND(14), R0);
 
 // FVAR-boolean?
   JUMP(L_boolean_closure);
@@ -594,7 +592,7 @@ L_boolean_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_boolean_code));
-  MOV(IND(17), R0);
+  MOV(IND(15), R0);
 
 // FVAR-car
   JUMP(L_car_closure);
@@ -617,7 +615,7 @@ L_car_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_car_code));
-  MOV(IND(18), R0);
+  MOV(IND(16), R0);
 
 // FVAR-cdr
   JUMP(L_cdr_closure);
@@ -640,7 +638,7 @@ L_cdr_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_cdr_code));
-  MOV(IND(19), R0);
+  MOV(IND(17), R0);
 
 // FVAR char->integer
   JUMP(L_char2int_closure);
@@ -667,7 +665,7 @@ L_char2int_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_char2int_code));
-  MOV(IND(20), R0);
+  MOV(IND(18), R0);
 
 // FVAR-char?
   JUMP(L_char_closure);
@@ -694,7 +692,7 @@ L_char_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_char_code));
-  MOV(IND(21), R0);
+  MOV(IND(19), R0);
 
 // FVAR-cons
   JUMP(L_cons_closure);
@@ -717,7 +715,7 @@ L_cons_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_cons_code));
-  MOV(IND(22), R0);
+  MOV(IND(20), R0);
 
 // FVAR denominator
   JUMP(L_denominator_closure);
@@ -749,7 +747,7 @@ L_denominator_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_denominator_code));
-  MOV(IND(23), R0);
+  MOV(IND(21), R0);
 
 // FVAR string->symbol
   JUMP(L_eq_closure);
@@ -811,7 +809,7 @@ L_eq_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_eq_code));
-  MOV(IND(24), R0);
+  MOV(IND(22), R0);
 
 // FVAR-integer?
   JUMP(L_integer_closure);
@@ -838,7 +836,7 @@ L_integer_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_integer_code));
-  MOV(IND(25), R0);
+  MOV(IND(23), R0);
 
 // FVAR integer->char
   JUMP(L_int2char_closure);
@@ -865,7 +863,7 @@ L_int2char_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_int2char_code));
-  MOV(IND(26), R0);
+  MOV(IND(24), R0);
 
 // FVAR make-string
   JUMP(L_make_string_closure);
@@ -907,7 +905,7 @@ L_make_string_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_make_string_code));
-  MOV(IND(27), R0);
+  MOV(IND(25), R0);
 
 // FVAR make-vector
   JUMP(L_make_vector_closure);
@@ -953,7 +951,7 @@ L_make_vector_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_make_vector_code));
-  MOV(IND(28), R0);
+  MOV(IND(26), R0);
 
 // FVAR not
   JUMP(L_not_closure);
@@ -980,7 +978,7 @@ L_not_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_not_code));
-  MOV(IND(29), R0);
+  MOV(IND(27), R0);
 
 // FVAR-null?
   JUMP(L_null_closure);
@@ -1007,7 +1005,7 @@ L_null_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_null_code));
-  MOV(IND(30), R0);
+  MOV(IND(28), R0);
 
 // FVAR number?
   JUMP(L_number_closure);
@@ -1036,7 +1034,7 @@ L_number_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_number_code));
-  MOV(IND(31), R0);
+  MOV(IND(29), R0);
 
 // FVAR numerator
   JUMP(L_numerator_closure);
@@ -1063,7 +1061,7 @@ L_numerator_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_numerator_code));
-  MOV(IND(32), R0);
+  MOV(IND(30), R0);
 
 // FVAR-pair?
   JUMP(L_pair_closure);
@@ -1090,7 +1088,7 @@ L_pair_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_pair_code));
-  MOV(IND(33), R0);
+  MOV(IND(31), R0);
 
 // FVAR-procedure?
   JUMP(L_procedure_closure);
@@ -1117,7 +1115,7 @@ L_procedure_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_procedure_code));
-  MOV(IND(34), R0);
+  MOV(IND(32), R0);
 
 // FVAR rational?
   JUMP(L_rational_closure);
@@ -1146,7 +1144,7 @@ L_rational_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_rational_code));
-  MOV(IND(35), R0);
+  MOV(IND(33), R0);
 
 // FVAR remainder
   JUMP(L_remainder_closure);
@@ -1176,7 +1174,7 @@ L_remainder_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_remainder_code));
-  MOV(IND(36), R0);
+  MOV(IND(34), R0);
 
 // FVAR set-car!
   JUMP(L_set_car_closure);
@@ -1201,7 +1199,7 @@ L_set_car_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_set_car_code));
-  MOV(IND(37), R0);
+  MOV(IND(35), R0);
 
 // FVAR set-cdr!
   JUMP(L_set_cdr_closure);
@@ -1226,7 +1224,7 @@ L_set_cdr_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_set_cdr_code));
-  MOV(IND(38), R0);
+  MOV(IND(36), R0);
 
 // FVAR-string-length
   JUMP(L_string_length_closure);
@@ -1251,7 +1249,7 @@ L_string_length_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_string_length_code));
-MOV(IND(39), R0);
+MOV(IND(37), R0);
 
 // FVAR-string-ref
   JUMP(L_string_ref_closure);
@@ -1281,7 +1279,7 @@ L_string_ref_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_string_ref_code));
-  MOV(IND(40), R0);
+  MOV(IND(38), R0);
 
 // FVAR string-set!
   JUMP(L_string_set_closure);
@@ -1313,7 +1311,7 @@ L_string_set_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_string_set_code));
-  MOV(IND(41), R0);
+  MOV(IND(39), R0);
 
 // FVAR string->symbol
   JUMP(L_string2symbol_closure);
@@ -1384,7 +1382,7 @@ L_string2symbol_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_string2symbol_code));
-  MOV(IND(42), R0);
+  MOV(IND(40), R0);
 
 // FVAR-string?
   JUMP(L_string_closure);
@@ -1411,7 +1409,7 @@ L_string_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_string_code));
-  MOV(IND(43), R0);
+  MOV(IND(41), R0);
 
 // FVAR-symbol?
   JUMP(L_symbol_closure);
@@ -1422,8 +1420,6 @@ L_symbol_code:
   JUMP_NE(L_closure_error_args_count);
   MOV(R1, FPARG(2));
   CMP(INDD(R1, 0), IMM(T_SYMBOL));
-  JUMP_NE(L_symbol_code_false);
-  CMP(INDD(R1, 1), IMM(0));
   JUMP_EQ(L_symbol_code_true);
 L_symbol_code_false:
   MOV(R0, IMM(SOB_FALSE));
@@ -1441,7 +1437,7 @@ L_symbol_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_symbol_code));
-MOV(IND(44), R0);
+MOV(IND(42), R0);
 
 // FVAR symbol->string
   JUMP(L_symbol2string_closure);
@@ -1462,7 +1458,7 @@ L_symbol2string_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_symbol2string_code));
-  MOV(IND(45), R0);
+  MOV(IND(43), R0);
 
 // FVAR vector
   JUMP(L_vector_var_closure);
@@ -1494,7 +1490,7 @@ L_vector_var_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_vector_var_code));
-  MOV(IND(46), R0);
+  MOV(IND(44), R0);
 
 // FVAR-vector-length
   JUMP(L_vector_length_closure);
@@ -1519,7 +1515,7 @@ L_vector_length_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_vector_length_code));
-MOV(IND(47), R0);
+MOV(IND(45), R0);
 
 // FVAR-vector-ref
   JUMP(L_vector_ref_closure);
@@ -1547,7 +1543,7 @@ L_vector_ref_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_vector_ref_code));
-  MOV(IND(48), R0);
+  MOV(IND(46), R0);
 
 // FVAR vector-set!
   JUMP(L_vector_set_closure);
@@ -1576,7 +1572,7 @@ L_vector_set_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_vector_set_code));
-  MOV(IND(49), R0);
+  MOV(IND(47), R0);
 
 // FVAR-vector?
   JUMP(L_vector_closure);
@@ -1603,7 +1599,7 @@ L_vector_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_vector_code));
-  MOV(IND(50), R0);
+  MOV(IND(48), R0);
 
 // FVAR-zero?
   JUMP(L_zero_closure);
@@ -1633,7 +1629,7 @@ L_zero_closure:
   MOV(INDD(R0, 0), IMM(T_CLOSURE));
   MOV(INDD(R0, 1), IMM(0));
   MOV(INDD(R0, 2), LABEL(L_zero_code));
-MOV(IND(51), R0);
+MOV(IND(49), R0);
 
 // *********************************
 //          FVAR CODE  END
@@ -1650,19 +1646,91 @@ MOV(IND(51), R0);
 //          SYMBOL TABLE END
 // *********************************
 
+// ***CODE-GEN DEF***
 
-// ***CODE-GEN APPLIC***
-// Push Parameters
-  MOV(R0, IMM(7));
+// ***CODE-GEN LAMBDA-VAR***
+  MOV(R1, FPARG(0));
+  MOV(R3,IMM(1));
+  PUSH(R3);
+  CALL(MALLOC);
+  DROP(1);
+  MOV(R2, R0);
+// Copy environments
+  MOV(R3, IMM(0));
+  MOV(R4, IMM(1));
+L_closure_lambda_var_loop_copy_7:
+  CMP(R3, IMM(0));
+  JUMP_EQ (L_closure_lambda_var_loop_copy_end_7);
+  MOV(INDD(R2, R4), INDD(R1, R3));
+  INCR(R3);
+  INCR(R4);
+  JUMP(L_closure_lambda_var_loop_copy_7);
+L_closure_lambda_var_loop_copy_end_7:
+  CMP(IMM(0), IMM(0));
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_7)
+  MOV(R3,FPARG(1));
+  PUSH(R3);
+  CALL(MALLOC);
+  DROP(1);
+  MOV(INDD(R2,0), R0);
+// Copy from stack
+  MOV(R4, IMM(0));
+  MOV(R5, IMM(2));
+L_closure_lambda_var_loop_copy_stack_7:
+  CMP(R4, R3);
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_7);
+  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
+  INCR(R4);
+  INCR(R5);
+  JUMP(L_closure_lambda_var_loop_copy_stack_7);
+L_closure_lambda_var_loop_copy_stack_end_7:
+// Create Closure
+  PUSH(IMM(3));
+  CALL(MALLOC);
+  DROP(1);
+  MOV(INDD(R0,0),IMM(T_CLOSURE));
+  MOV(INDD(R0,1),R2);
+  MOV(INDD(R0,2),LABEL(L_closure_lambda_var_body_7));
+  JUMP(L_closure_lambda_var_end_7);
 
+// Closure body
+L_closure_lambda_var_body_7:
+  PUSH(FP);
+  MOV(FP,SP);
+//Converting variadic Parameters to List
+  MOV(R1, SOB_NIL);
+  MOV(R4, FPARG(1));
+  INCR(R4);
+L_closure_lambda_var_loop_create_list_7:
+  CMP(R4, IMM(1));
+  JUMP_EQ(L_closure_lambda_var_loop_create_list_end_7);
+  PUSH(R1);
+  PUSH(FPARG(R4));
+  CALL(MAKE_SOB_PAIR);
+  DROP(2);
+  MOV(R1, R0);
+  DECR(R4);
+  JUMP(L_closure_lambda_var_loop_create_list_7);
+L_closure_lambda_var_loop_create_list_end_7:
+  MOV(FPARG(2), R1);
+// CODE-GEN pvar
+  MOV(R0, FPARG(2));
+
+  POP(FP);
+  RETURN;
+L_closure_lambda_var_end_7:
+
+  MOV(IND(50), R0);
+  MOV(R0, IMM(SOB_VOID));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_13);
   PUSH(R0);
-// Push Parameters Number
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// Push Closure
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_13:
 
-// ***CODE-GEN APPLIC***
-// Push Parameters
+// ***CODE-GEN DEF***
 
 // ***CODE-GEN LAMBDA-SIMPLE***
   MOV(R1, FPARG(0));
@@ -1674,16 +1742,16 @@ MOV(IND(51), R0);
 // Copy environments
   MOV(R3, IMM(0));
   MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_3:
+L_closure_loop_copy_env_lambda_simple_7:
   CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_3);
+  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_7);
   MOV(INDD(R2, R4), INDD(R1, R3));
   INCR(R3);
   INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_3);
-L_closure_loop_copy_env_end_lambda_simple_3:
+  JUMP(L_closure_loop_copy_env_lambda_simple_7);
+L_closure_loop_copy_env_end_lambda_simple_7:
   CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_3)
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_7)
   MOV(R3,FPARG(1));
   PUSH(R3);
   CALL(MALLOC);
@@ -1692,40 +1760,175 @@ L_closure_loop_copy_env_end_lambda_simple_3:
 // Copy from stack
   MOV(R4, IMM(0));
   MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_3:
+L_closure_loop_copy_stack_lambda_simple_7:
   CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_3);
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_7);
   MOV(INDD(INDD(R2,0),R4),FPARG(R5));
   INCR(R4);
   INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_3);
-L_closure_loop_copy_stack_end_lambda_simple_3:
+  JUMP(L_closure_loop_copy_stack_lambda_simple_7);
+L_closure_loop_copy_stack_end_lambda_simple_7:
 // Create Closure
   PUSH(IMM(3));
   CALL(MALLOC);
   DROP(1);
   MOV(INDD(R0,0),IMM(T_CLOSURE));
   MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_3));
-  JUMP(L_closure_exit_lambda_simple_3);
+  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_7));
+  JUMP(L_closure_exit_lambda_simple_7);
 
 // Closure body
-L_closure_body_lambda_simple_3:
+L_closure_body_lambda_simple_7:
   PUSH(FP);
   MOV(FP,SP);
   CMP(FPARG(1), IMM(2));
   JUMP_NE(L_closure_error_args_count);
-// ***CODE-GEN TC-APPLIC***
-  PUSH(SOB_NIL);
+
+// ***CODE-GEN IF***
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
 // CODE-GEN pvar
   MOV(R0, FPARG(3));
 
   PUSH(R0);
-
+// Push Parameters Number
   MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(28));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  CMP(R0, IMM(SOB_FALSE));
+  JUMP_EQ(L_if3_else_7);
+// CODE-GEN pvar
+  MOV(R0, FPARG(3));
+
+  JUMP(L_if3_exit_7);
+L_if3_else_7:
+// ***CODE-GEN TC-APPLIC***
+  PUSH(SOB_NIL);
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+// CODE-GEN pvar
+  MOV(R0, FPARG(3));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(17));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
   PUSH(R0);
 // CODE-GEN pvar
   MOV(R0, FPARG(2));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(2));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(51));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  PUSH(R0);
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+// CODE-GEN pvar
+  MOV(R0, FPARG(3));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(16));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN pvar
+  MOV(R0, FPARG(2));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  PUSH(R0);
+
+  MOV(R0, IMM(2));
+  PUSH(R0);
+// CODE-GEN fvar
+  MOV(R0, IND(20));
 
   CMP(INDD(R0,0), IMM(T_CLOSURE));
   JUMP_NE(L_error_cannot_apply_none_closure);
@@ -1739,24 +1942,32 @@ L_closure_body_lambda_simple_3:
   MOV(FP,FPARG(-2));
   MOV(R4,SP);
   DECR(R4);
-L_tc_applic_move_stack_2:
+L_tc_applic_move_stack_7:
   MOV(STACK(R3),STACK(R1));
   INCR(R1);
   INCR(R3);
   CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_2);
+  JUMP_LE(L_tc_applic_move_stack_7);
   MOV(SP,R3);
   JUMPA(INDD(R0,2));
 
+L_if3_exit_7:
+
   POP(FP);
   RETURN;
-L_closure_exit_lambda_simple_3:
+L_closure_exit_lambda_simple_7:
 
+  MOV(IND(51), R0);
+  MOV(R0, IMM(SOB_VOID));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_14);
   PUSH(R0);
-// Push Parameters Number
-  MOV(R0, IMM(1));
-  PUSH(R0);
-// Push Closure
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_14:
+
+// ***CODE-GEN DEF***
 
 // ***CODE-GEN LAMBDA-SIMPLE***
   MOV(R1, FPARG(0));
@@ -1768,16 +1979,16 @@ L_closure_exit_lambda_simple_3:
 // Copy environments
   MOV(R3, IMM(0));
   MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_1:
+L_closure_loop_copy_env_lambda_simple_8:
   CMP(R3, IMM(0));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_1);
+  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_8);
   MOV(INDD(R2, R4), INDD(R1, R3));
   INCR(R3);
   INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_1);
-L_closure_loop_copy_env_end_lambda_simple_1:
+  JUMP(L_closure_loop_copy_env_lambda_simple_8);
+L_closure_loop_copy_env_end_lambda_simple_8:
   CMP(IMM(0), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_1)
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_8)
   MOV(R3,FPARG(1));
   PUSH(R3);
   CALL(MALLOC);
@@ -1786,100 +1997,345 @@ L_closure_loop_copy_env_end_lambda_simple_1:
 // Copy from stack
   MOV(R4, IMM(0));
   MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_1:
+L_closure_loop_copy_stack_lambda_simple_8:
   CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_1);
+  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_8);
   MOV(INDD(INDD(R2,0),R4),FPARG(R5));
   INCR(R4);
   INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_1);
-L_closure_loop_copy_stack_end_lambda_simple_1:
+  JUMP(L_closure_loop_copy_stack_lambda_simple_8);
+L_closure_loop_copy_stack_end_lambda_simple_8:
 // Create Closure
   PUSH(IMM(3));
   CALL(MALLOC);
   DROP(1);
   MOV(INDD(R0,0),IMM(T_CLOSURE));
   MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_1));
-  JUMP(L_closure_exit_lambda_simple_1);
+  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_8));
+  JUMP(L_closure_exit_lambda_simple_8);
 
 // Closure body
-L_closure_body_lambda_simple_1:
+L_closure_body_lambda_simple_8:
   PUSH(FP);
   MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
+  CMP(FPARG(1), IMM(2));
   JUMP_NE(L_closure_error_args_count);
 
-// ***CODE-GEN LAMBDA-SIMPLE***
-  MOV(R1, FPARG(0));
-  MOV(R3,IMM(2));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(R2,R0);
-// Copy environments
-  MOV(R3, IMM(0));
-  MOV(R4, IMM(1));
-L_closure_loop_copy_env_lambda_simple_2:
-  CMP(R3, IMM(1));
-  JUMP_EQ (L_closure_loop_copy_env_end_lambda_simple_2);
-  MOV(INDD(R2, R4), INDD(R1, R3));
-  INCR(R3);
-  INCR(R4);
-  JUMP(L_closure_loop_copy_env_lambda_simple_2);
-L_closure_loop_copy_env_end_lambda_simple_2:
-  CMP(IMM(1), IMM(0));
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_2)
-  MOV(R3,FPARG(1));
-  PUSH(R3);
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R2,0), R0);
-// Copy from stack
-  MOV(R4, IMM(0));
-  MOV(R5, IMM(2));
-L_closure_loop_copy_stack_lambda_simple_2:
-  CMP(R4, R3);
-  JUMP_EQ(L_closure_loop_copy_stack_end_lambda_simple_2);
-  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
-  INCR(R4);
-  INCR(R5);
-  JUMP(L_closure_loop_copy_stack_lambda_simple_2);
-L_closure_loop_copy_stack_end_lambda_simple_2:
-// Create Closure
-  PUSH(IMM(3));
-  CALL(MALLOC);
-  DROP(1);
-  MOV(INDD(R0,0),IMM(T_CLOSURE));
-  MOV(INDD(R0,1),R2);
-  MOV(INDD(R0,2),LABEL(L_closure_body_lambda_simple_2));
-  JUMP(L_closure_exit_lambda_simple_2);
+// ***CODE-GEN IF***
 
-// Closure body
-L_closure_body_lambda_simple_2:
-  PUSH(FP);
-  MOV(FP,SP);
-  CMP(FPARG(1), IMM(1));
-  JUMP_NE(L_closure_error_args_count);
-// ***CODE-GEN TC-APPLIC***
-  PUSH(SOB_NIL);
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
 // CODE-GEN pvar
   MOV(R0, FPARG(2));
 
   PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
 // CODE-GEN fvar
-  MOV(R0, IND(13));
+  MOV(R0, IND(28));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  CMP(R0, IMM(SOB_FALSE));
+  JUMP_EQ(L_if3_else_8);
+// CODE-GEN pvar
+  MOV(R0, FPARG(3));
+
+  JUMP(L_if3_exit_8);
+L_if3_else_8:
+// ***CODE-GEN TC-APPLIC***
+  PUSH(SOB_NIL);
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+// CODE-GEN pvar
+  MOV(R0, FPARG(3));
+
+  PUSH(R0);
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+// CODE-GEN pvar
+  MOV(R0, FPARG(2));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(17));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(2));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(52));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
+
+  PUSH(R0);
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+// CODE-GEN pvar
+  MOV(R0, FPARG(2));
+
+  PUSH(R0);
+// Push Parameters Number
+  MOV(R0, IMM(1));
+  PUSH(R0);
+// Push Closure
+// CODE-GEN fvar
+  MOV(R0, IND(16));
+
+  CMP(INDD(R0, 0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+// Push Environment
+  PUSH(INDD(R0, 1));
+// APPLIC
+  CALLA(INDD(R0, 2));
+  DROP(1);
+  POP(R1);
+  DROP(R1);
+  DROP(IMM(1));
 
   PUSH(R0);
 
   MOV(R0, IMM(2));
   PUSH(R0);
+// CODE-GEN fvar
+  MOV(R0, IND(20));
+
+  CMP(INDD(R0,0), IMM(T_CLOSURE));
+  JUMP_NE(L_error_cannot_apply_none_closure);
+  PUSH(INDD(R0,1));
+  PUSH(FPARG(-1));
+  MOV(R1,FP);
+  MOV(R2,FPARG(1));
+  ADD(R2,IMM(5));
+  MOV(R3,FP);
+  SUB(R3,R2);
+  MOV(FP,FPARG(-2));
+  MOV(R4,SP);
+  DECR(R4);
+L_tc_applic_move_stack_8:
+  MOV(STACK(R3),STACK(R1));
+  INCR(R1);
+  INCR(R3);
+  CMP(R1,R4);
+  JUMP_LE(L_tc_applic_move_stack_8);
+  MOV(SP,R3);
+  JUMPA(INDD(R0,2));
+
+L_if3_exit_8:
+
+  POP(FP);
+  RETURN;
+L_closure_exit_lambda_simple_8:
+
+  MOV(IND(52), R0);
+  MOV(R0, IMM(SOB_VOID));
+  CMP(R0,SOB_VOID);
+  JUMP_EQ(L_print_ans_15);
+  PUSH(R0);
+  CALL(WRITE_SOB);
+  DROP(1)
+  CALL(NEWLINE);
+L_print_ans_15:
+
+
+// ***CODE-GEN APPLIC***
+ PUSH(SOB_NIL);
+// Push Parameters
+// Push Parameters Number
+  MOV(R0, IMM(0));
+  PUSH(R0);
+// Push Closure
+
+// ***CODE-GEN LAMBDA-VAR***
+  MOV(R1, FPARG(0));
+  MOV(R3,IMM(1));
+  PUSH(R3);
+  CALL(MALLOC);
+  DROP(1);
+  MOV(R2, R0);
+// Copy environments
+  MOV(R3, IMM(0));
+  MOV(R4, IMM(1));
+L_closure_lambda_var_loop_copy_8:
+  CMP(R3, IMM(0));
+  JUMP_EQ (L_closure_lambda_var_loop_copy_end_8);
+  MOV(INDD(R2, R4), INDD(R1, R3));
+  INCR(R3);
+  INCR(R4);
+  JUMP(L_closure_lambda_var_loop_copy_8);
+L_closure_lambda_var_loop_copy_end_8:
+  CMP(IMM(0), IMM(0));
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_8)
+  MOV(R3,FPARG(1));
+  PUSH(R3);
+  CALL(MALLOC);
+  DROP(1);
+  MOV(INDD(R2,0), R0);
+// Copy from stack
+  MOV(R4, IMM(0));
+  MOV(R5, IMM(2));
+L_closure_lambda_var_loop_copy_stack_8:
+  CMP(R4, R3);
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_8);
+  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
+  INCR(R4);
+  INCR(R5);
+  JUMP(L_closure_lambda_var_loop_copy_stack_8);
+L_closure_lambda_var_loop_copy_stack_end_8:
+// Create Closure
+  PUSH(IMM(3));
+  CALL(MALLOC);
+  DROP(1);
+  MOV(INDD(R0,0),IMM(T_CLOSURE));
+  MOV(INDD(R0,1),R2);
+  MOV(INDD(R0,2),LABEL(L_closure_lambda_var_body_8));
+  JUMP(L_closure_lambda_var_end_8);
+
+// Closure body
+L_closure_lambda_var_body_8:
+  PUSH(FP);
+  MOV(FP,SP);
+//Converting variadic Parameters to List
+  MOV(R1, SOB_NIL);
+  MOV(R4, FPARG(1));
+  INCR(R4);
+L_closure_lambda_var_loop_create_list_8:
+  CMP(R4, IMM(1));
+  JUMP_EQ(L_closure_lambda_var_loop_create_list_end_8);
+  PUSH(R1);
+  PUSH(FPARG(R4));
+  CALL(MAKE_SOB_PAIR);
+  DROP(2);
+  MOV(R1, R0);
+  DECR(R4);
+  JUMP(L_closure_lambda_var_loop_create_list_8);
+L_closure_lambda_var_loop_create_list_end_8:
+  MOV(FPARG(2), R1);
+// ***CODE-GEN TC-APPLIC***
+  PUSH(SOB_NIL);
+
+  MOV(R0, IMM(0));
+  PUSH(R0);
+
+// ***CODE-GEN LAMBDA-VAR***
+  MOV(R1, FPARG(0));
+  MOV(R3,IMM(2));
+  PUSH(R3);
+  CALL(MALLOC);
+  DROP(1);
+  MOV(R2, R0);
+// Copy environments
+  MOV(R3, IMM(0));
+  MOV(R4, IMM(1));
+L_closure_lambda_var_loop_copy_9:
+  CMP(R3, IMM(1));
+  JUMP_EQ (L_closure_lambda_var_loop_copy_end_9);
+  MOV(INDD(R2, R4), INDD(R1, R3));
+  INCR(R3);
+  INCR(R4);
+  JUMP(L_closure_lambda_var_loop_copy_9);
+L_closure_lambda_var_loop_copy_end_9:
+  CMP(IMM(1), IMM(0));
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_9)
+  MOV(R3,FPARG(1));
+  PUSH(R3);
+  CALL(MALLOC);
+  DROP(1);
+  MOV(INDD(R2,0), R0);
+// Copy from stack
+  MOV(R4, IMM(0));
+  MOV(R5, IMM(2));
+L_closure_lambda_var_loop_copy_stack_9:
+  CMP(R4, R3);
+  JUMP_EQ(L_closure_lambda_var_loop_copy_stack_end_9);
+  MOV(INDD(INDD(R2,0),R4),FPARG(R5));
+  INCR(R4);
+  INCR(R5);
+  JUMP(L_closure_lambda_var_loop_copy_stack_9);
+L_closure_lambda_var_loop_copy_stack_end_9:
+// Create Closure
+  PUSH(IMM(3));
+  CALL(MALLOC);
+  DROP(1);
+  MOV(INDD(R0,0),IMM(T_CLOSURE));
+  MOV(INDD(R0,1),R2);
+  MOV(INDD(R0,2),LABEL(L_closure_lambda_var_body_9));
+  JUMP(L_closure_lambda_var_end_9);
+
+// Closure body
+L_closure_lambda_var_body_9:
+  PUSH(FP);
+  MOV(FP,SP);
+//Converting variadic Parameters to List
+  MOV(R1, SOB_NIL);
+  MOV(R4, FPARG(1));
+  INCR(R4);
+L_closure_lambda_var_loop_create_list_9:
+  CMP(R4, IMM(1));
+  JUMP_EQ(L_closure_lambda_var_loop_create_list_end_9);
+  PUSH(R1);
+  PUSH(FPARG(R4));
+  CALL(MAKE_SOB_PAIR);
+  DROP(2);
+  MOV(R1, R0);
+  DECR(R4);
+  JUMP(L_closure_lambda_var_loop_create_list_9);
+L_closure_lambda_var_loop_create_list_end_9:
+  MOV(FPARG(2), R1);
 // CODE-GEN bvar
   MOV(R1, FPARG(0));
   MOV(R1, INDD(R1, 0));
   MOV(R1, INDD(R1, 0));
   MOV(R0, R1);
 
+  POP(FP);
+  RETURN;
+L_closure_lambda_var_end_9:
+
   CMP(INDD(R0,0), IMM(T_CLOSURE));
   JUMP_NE(L_error_cannot_apply_none_closure);
   PUSH(INDD(R0,1));
@@ -1892,22 +2348,18 @@ L_closure_body_lambda_simple_2:
   MOV(FP,FPARG(-2));
   MOV(R4,SP);
   DECR(R4);
-L_tc_applic_move_stack_1:
+L_tc_applic_move_stack_9:
   MOV(STACK(R3),STACK(R1));
   INCR(R1);
   INCR(R3);
   CMP(R1,R4);
-  JUMP_LE(L_tc_applic_move_stack_1);
+  JUMP_LE(L_tc_applic_move_stack_9);
   MOV(SP,R3);
   JUMPA(INDD(R0,2));
 
   POP(FP);
   RETURN;
-L_closure_exit_lambda_simple_2:
-
-  POP(FP);
-  RETURN;
-L_closure_exit_lambda_simple_1:
+L_closure_lambda_var_end_8:
 
   CMP(INDD(R0, 0), IMM(T_CLOSURE));
   JUMP_NE(L_error_cannot_apply_none_closure);
@@ -1918,23 +2370,14 @@ L_closure_exit_lambda_simple_1:
   DROP(1);
   POP(R1);
   DROP(R1);
-
-  CMP(INDD(R0, 0), IMM(T_CLOSURE));
-  JUMP_NE(L_error_cannot_apply_none_closure);
-// Push Environment
-  PUSH(INDD(R0, 1));
-// APPLIC
-  CALLA(INDD(R0, 2));
-  DROP(1);
-  POP(R1);
-  DROP(R1);
+  DROP(IMM(1));
   CMP(R0,SOB_VOID);
-  JUMP_EQ(L_print_ans_1);
+  JUMP_EQ(L_print_ans_16);
   PUSH(R0);
   CALL(WRITE_SOB);
   DROP(1)
   CALL(NEWLINE);
-L_print_ans_1:
+L_print_ans_16:
 
 
 JUMP(L_errors_end);

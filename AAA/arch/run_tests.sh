@@ -35,7 +35,12 @@ for f in $(ls -v AllTests/*/tests/*.scm); do
   echo "--------------------------------"
   echo
 done
-
+if [ -f "out_test.c" ]; then
+  rm "out_test.c"
+fi
+if [ -f "out_test" ]; then
+  rm "out_test"
+fi
 echo "Number of tests: $total_tests"
 echo -e "\033[1;32mNumber of passed tests: $tests_passed \033[0m"
 echo -e "\033[1;31mNumber of failed tests: $tests_failed \033[0m"

@@ -495,8 +495,6 @@
             "  JUMP_NE(L_closure_error_args_count);"        NL
             "  MOV(R1, FPARG(2));"                          NL
             "  CMP(INDD(R1, 0), IMM(T_SYMBOL));"            NL
-            "  JUMP_NE(L_symbol_code_false);"               NL
-            "  CMP(INDD(R1, 1), IMM(0));"                   NL
             "  JUMP_EQ(L_symbol_code_true);"                NL
             "L_symbol_code_false:"                          NL
             "  MOV(R0, IMM(SOB_FALSE));"                    NL
@@ -514,9 +512,6 @@
         )
     )) 
     
-    
-    
-
     
 (define FVAR-string-length
     (lambda ()

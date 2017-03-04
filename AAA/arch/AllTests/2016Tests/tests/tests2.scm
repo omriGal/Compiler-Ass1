@@ -61,17 +61,7 @@ c
                            )
                  )
       )
-(f5)	  
-
-; test 58
-(define (dot-product v w)
-	(begin
-	(define (accumulate op init lst)
-		(if (null? lst)
-		init
-		(op (car lst) (accumulate op init (cdr lst)))))
-		(accumulate + 0 (map * v w))))
-(dot-product `(1 2 3 4) `(1 656 7 4))		
+(f5)	  		
 
 ; test 59
 (let ((square (lambda (x) (* x x)))) 33)

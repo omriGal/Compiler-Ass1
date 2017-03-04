@@ -1351,7 +1351,9 @@ done))
                                     ((equal? (car pe) 'lambda-opt)
                                             (list (car pe) (cadr pe) (caddr pe) (inner-pe->lex-pe (cadddr pe) (add-params (append (cadr pe) (list (caddr pe))) env))))
                                     ((equal? (car pe) 'var) `,(get-var-lex (cadr pe) env))
-                                    (else (map (lambda (newpe) (inner-pe->lex-pe newpe env)) pe))))))
+                                    ;(else (map (lambda (newpe) (inner-pe->lex-pe newpe env)) pe))))))
+                                    ((list? pe) (map (lambda (newpe) (inner-pe->lex-pe newpe env)) pe))
+                                    (else pe)))))
         (lambda (pe)
             (inner-pe->lex-pe pe (list))
     )))
@@ -1547,10 +1549,11 @@ done))
             (string-append
                  NL
                  "// ***CODE-GEN APPLIC***"                             NL
+                 " PUSH(SOB_NIL);"                                      NL
                  "// Push Parameters"                                   NL
-                 (cond ((equal? (car func) 'lambda-opt) (applic-add-null-if-needed-opt (cadr func) params))
-                       ((equal? (car func) 'lambda-var) (applic-add-null-if-needed-var params))
-                       (else ""))
+;;                  (cond ((equal? (car func) 'lambda-opt) (applic-add-null-if-needed-opt (cadr func) params))
+;;                        ((equal? (car func) 'lambda-var) (applic-add-null-if-needed-var params))
+;;                        (else ""))
                 (CODE-GEN-applic-params params env)
                 "// Push Parameters Number"                              NL
                 "  MOV(R0, IMM("(n->s (length params)) "));"   NL
@@ -1565,7 +1568,8 @@ done))
                 "  CALLA(INDD(R0, 2));"                                  NL
                 "  DROP(1);"                                             NL 
                 "  POP(R1);"                                             NL
-                "  DROP(R1);"                                            NL 
+                "  DROP(R1);"                                            NL
+                "  DROP(IMM(1));"                                        NL
                 ))
     ))
     
